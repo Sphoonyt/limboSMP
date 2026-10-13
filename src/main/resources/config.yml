@@ -1,0 +1,48 @@
+# ---- Limbo SMP config ----
+siphon:
+  duration-hours: 12          # real-time, persists through restarts
+
+input:
+  double-click-window-ms: 250 # offhand-orb double right click window
+
+passives:
+  tick-interval-ticks: 10
+
+items:
+  null-orb:
+    name: "<gradient:#1a0a2e:#9b59ff>Null Orb</gradient>"
+    item-model: ""            # optional, e.g. "limbo:null_orb" (resource pack item model)
+  shadow-lantern:
+    name: "<gradient:#1a0a2e:#6fe3ff>Shadow Lantern</gradient>"
+    item-model: ""
+
+rifts:
+  block: CRYING_OBSIDIAN
+  particle-range: 32
+
+# PLACEHOLDER RECIPES. Right-click a rift while holding any listed ingredient.
+# Format: MATERIAL:amount (plain, unnamed items only)
+recipes:
+  null-orb:
+    ingredients:
+      - "HEART_OF_THE_SEA:1"
+      - "ECHO_SHARD:4"
+      - "OBSIDIAN:8"
+  shadow-lantern:
+    ingredients:
+      - "SOUL_LANTERN:1"
+      - "ECHO_SHARD:2"
+      - "GHAST_TEAR:1"
+
+# ---- darkness tuning ----
+ignition:
+  drought-restore-water: true   # evaporated water is put back when the ring ends
+
+entropy:
+  disruption-chance: 0.01       # chance per hit to scramble 2 hotbar slots
+  ruination-allow-break: false  # false = items stop at 1 durability instead of breaking
+
+temporal-repose:
+  time-scale: 0.6        # 1.0 = normal, 0.6 = victim runs at 12 tps (lower = stronger)
+  duration-seconds: 6
+  mode: auto             # auto = per-player tick rate packet with attribute fallback, attributes = never use packet
