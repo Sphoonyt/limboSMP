@@ -1,0 +1,35 @@
+# ---- Limbo SMP config ----
+siphon:
+  duration-hours: 12          # real-time, persists through restarts
+
+input:
+  double-click-window-ms: 250 # offhand-orb double right click window
+
+passives:
+  tick-interval-ticks: 10
+
+items:
+  null-orb:
+    name: "<gradient:#1a0a2e:#9b59ff>Null Orb</gradient>"
+    item-model: ""            # optional, e.g. "limbo:null_orb" (resource pack item model)
+  shadow-lantern:
+    name: "<gradient:#1a0a2e:#6fe3ff>Shadow Lantern</gradient>"
+    item-model: ""
+
+rifts:
+  block: CRYING_OBSIDIAN
+  particle-range: 32
+
+# PLACEHOLDER RECIPES. Right-click a rift while holding any listed ingredient.
+# Format: MATERIAL:amount (plain, unnamed items only)
+recipes:
+  null-orb:
+    ingredients:
+      - "HEART_OF_THE_SEA:1"
+      - "ECHO_SHARD:4"
+      - "OBSIDIAN:8"
+  shadow-lantern:
+    ingredients:
+      - "SOUL_LANTERN:1"
+      - "ECHO_SHARD:2"
+      - "GHAST_TEAR:1"
