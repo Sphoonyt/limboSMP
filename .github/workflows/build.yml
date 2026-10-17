@@ -44,3 +44,13 @@ jobs:
           name: LimboSMP
           path: ${{ steps.proj.outputs.dir }}/build/libs/*.jar
           if-no-files-found: error
+
+      - name: Zip resource pack
+        working-directory: ${{ steps.proj.outputs.dir }}/resourcepack
+        run: zip -r ../LimboSMP-ResourcePack.zip .
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: LimboSMP-ResourcePack
+          path: ${{ steps.proj.outputs.dir }}/LimboSMP-ResourcePack.zip
+          if-no-files-found: error
