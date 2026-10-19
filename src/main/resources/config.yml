@@ -1,0 +1,50 @@
+# ---- Limbo SMP config ----
+siphon:
+  duration-hours: 12          # real-time, persists through restarts
+
+input:
+  double-click-window-ms: 250 # offhand-orb double right click window
+
+passives:
+  tick-interval-ticks: 10
+
+items:
+  null-totem:
+    name: "<gradient:#1a0a2e:#9b59ff>Null Totem</gradient>"
+  shadow-lantern:
+    name: "<gradient:#1a0a2e:#6fe3ff>Shadow Lantern</gradient>"
+    item-model: ""
+
+rifts:
+  spawn-interval-hours: 24   # also changeable in-game: /limbo rift interval <hours>
+  spawn-count: 3             # also changeable in-game: /limbo rift count <n>
+  world: ""                  # "" = the default overworld
+  replace-on-spawn: true     # new cycle removes the previous auto-spawned rifts (manual ones stay)
+  min-spacing: 48            # minimum blocks between rifts
+  announce: true             # server message when new rifts appear (no coordinates)
+  particle-range: 40
+
+# Rift recipes are built in. Ops change them in the rift GUI (saved to recipes.yml).
+
+# ---- darkness tuning ----
+entropy:
+  disruption-chance: 0.01       # chance per hit to scramble 2 hotbar slots
+  ruination-allow-break: false  # false = items stop at 1 durability instead of breaking
+
+temporal-repose:
+  time-scale: 0.6        # 1.0 = normal, 0.6 = victim runs at 12 tps (lower = stronger)
+  duration-seconds: 6
+  mode: auto             # auto = per-player tick rate packet with attribute fallback, attributes = never use packet
+
+# Optional: send the resource pack (LimboSMP-ResourcePack.zip) to players on join.
+# Host the zip somewhere with a direct download link and put its SHA-1 here.
+# (You can also use server.properties resource-pack / resource-pack-sha1 instead.)
+resource-pack:
+  url: ""
+  sha1: ""
+  required: false
+
+souls:
+  tracking-consumes-soul: true   # starting a track uses up one player soul (the rift teleport always does)
+  track-minutes: 4
+  teleport-seconds: 10           # how long you must stand still for the rift teleport
