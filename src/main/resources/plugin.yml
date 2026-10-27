@@ -1,0 +1,16 @@
+name: LimboSMP
+version: '${version}'
+main: me.limbo.smp.LimboPlugin
+api-version: '1.21'
+description: Limbo SMP - darknesses, null totems and shadow rifts.
+commands:
+  limbo:
+    description: Limbo SMP main command
+    usage: /limbo <darknessinfo|trust|...>
+  trust:
+    description: Trust a player so your abilities never affect them
+    usage: /trust <player|remove <player>|list>
+permissions:
+  limbo.admin:
+    description: Access to Limbo op commands
+    default: op
