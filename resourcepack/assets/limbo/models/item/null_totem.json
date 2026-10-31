@@ -1,7 +1,0 @@
-{
-  "parent": "minecraft:item/generated",
-  "textures": {
-    "layer0": "limbo:item/null_totem",
-    "layer1": "limbo:item/null_totem_glow"
-  }
-}
