@@ -1,0 +1,101 @@
+# ---- Limbo SMP config ----
+siphon:
+  duration-hours: 12          # real-time, persists through restarts
+
+input:
+  double-click-window-ms: 250 # offhand-orb double right click window
+
+passives:
+  tick-interval-ticks: 10
+
+items:
+  null-totem:
+    name: "<gradient:#1a0a2e:#9b59ff>Null Totem</gradient>"
+  shadow-lantern:
+    name: "<gradient:#1a0a2e:#6fe3ff>Shadow Lantern</gradient>"
+    item-model: ""
+  devotion-core:
+    texture: ""      # optional base64 skin texture; blank = fetch the skin of NormalPlayerSus at startup
+
+rifts:
+  spawn-interval-hours: 24   # also changeable in-game: /limbo rift interval <hours>
+  spawn-count: 3             # also changeable in-game: /limbo rift count <n>
+  world: ""                  # "" = the default overworld
+  replace-on-spawn: true     # new cycle removes the previous auto-spawned rifts (manual ones stay)
+  min-spacing: 48            # minimum blocks between rifts
+  announce: true             # server message when new rifts appear (no coordinates)
+  particle-range: 40
+
+# Rift recipes are built in. Ops change them in the rift GUI (saved to recipes.yml).
+
+# ---- darkness tuning ----
+entropy:
+  disruption-chance: 0.01       # chance per hit to scramble 2 hotbar slots
+
+temporal-repose:
+  time-scale: 0.6        # 1.0 = normal, 0.6 = victim runs at 12 tps (lower = stronger)
+  duration-seconds: 6
+  mode: auto             # auto = per-player tick rate packet with attribute fallback, attributes = never use packet
+
+# Optional: send the resource pack (LimboSMP-ResourcePack.zip) to players on join.
+# Host the zip somewhere with a direct download link and put its SHA-1 here.
+# (You can also use server.properties resource-pack / resource-pack-sha1 instead.)
+resource-pack:
+  url: ""
+  sha1: ""
+  required: false
+
+souls:
+  tracking-consumes-soul: true   # starting a track uses up one player soul (the rift teleport always does)
+  track-minutes: 4
+  teleport-seconds: 10           # how long you must stand still for the rift teleport
+
+# ---- server events (/limbo event ...) ----
+events:
+  world: ""                    # world the events use (blank = the default overworld)
+  deity:
+    hearing-radius: 160        # who sees its subtitles (action bar) and hears it
+    # lines:                   # override any voice line list, e.g.  awaken: ["...", "..."]
+    #   awaken: []             # keys: awaken group group-warning darkness cursed rift reawaken summon launch pedestals charging finale
+  server-start:
+    group-seconds: 60          # how long people get to group up before the roll
+    group-radius: 12           # people within this many blocks of each other (chained) travel as one group
+    rift-open-seconds: 7       # how long the Big Rift takes to open before it sends everyone out
+    line-seconds: 4            # how long each deity line stays on screen
+  progression:
+    holders: 8                 # players who get the mark
+    enchant-cap: 3             # highest enchant level allowed until the event ends (0 = no cap)
+    border-start: 0            # world border size (diameter) set when it starts (0 = leave as is)
+    border-end: 0              # size it grows to when the event ends (0 = don't change it)
+    border-expand-seconds: 60  # how long that growth takes
+    border-grow: 500           # at the end the border grows by this many blocks (ignored if border-end is set)
+    summon-radius: 60          # holders are picked from players this close to the deity
+    pedestal-block: NETHERITE_BLOCK
+    pedestal-radius: 18        # ring of stones around the deity (one per holder)
+    pedestal-hold-seconds: 3   # every stone must stay occupied this long (0 = instant)
+    launch-speed: 1.5          # blocks per tick while being launched
+    launch-ticks: 40
+    finale-radius: 150         # who gets levitated by the finale
+    reroll-reward: 3           # Devotion Cores each holder earns (plus a null totem)
+    rejoin-grace-minutes: 10   # a holder whose connection dropped gets the mark back if they return within this
+    line-seconds: 4
+
+# ---- cursed items ----
+# A pool of inert crafting items. Every rotation-hours a different set is "active". Holding an active one (main hand or
+# offhand) runs your darkness's passives and lets you use your FIRST channel at double cooldown.
+cursed-items:
+  enabled: true
+  rotation-hours: 24
+  active-count: 2       # how many items are active at once
+  flux: true            # does holding one also run your flux passive?
+  pool: []              # empty = built-in list (iron nugget, flint, leather, phantom membrane, ...). Material names.
+
+# ---- progression locks (/limbo unlock|lock|unlocks <nether|villagers|rifts|enchants>) ----
+unlocks:
+  lock-by-default: true  # on a fresh install everything starts locked (set false to start with everything open)
+
+# ---- Devotion Core (the reroll item) and its ritual ----
+ritual:
+  radius: 6            # blocks, everyone inside when the timer ends is rerolled
+  seconds: 60
+  announce-coordinates: true   # false = only the rerolled players see where the ritual was
