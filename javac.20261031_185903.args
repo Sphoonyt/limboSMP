@@ -1,0 +1,4 @@
+-proc:none
+-d
+/tmp/out
+@/tmp/srcs
