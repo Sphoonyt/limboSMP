@@ -3,7 +3,7 @@ package me.limbo.smp.darkness;
 import me.limbo.smp.darkness.inertia.ComboPassive;
 import me.limbo.smp.darkness.inertia.KineticThief;
 import me.limbo.smp.darkness.inertia.Propel;
-import me.limbo.smp.darkness.inertia.SpeedPassive;
+import me.limbo.smp.darkness.inertia.QuickChargesPassive;
 import me.limbo.smp.darkness.inertia.UnstoppableForceFlux;
 import org.bukkit.Color;
 
@@ -18,7 +18,7 @@ public final class InertiaDarkness extends Darkness {
 
     public InertiaDarkness() {
         super(ID, "Inertia", "Speed, resistance to change, immovability.", COLOR);
-        addPassive(new SpeedPassive());
+        addPassive(new QuickChargesPassive());
         addPassive(new ComboPassive());
         setFluxPassive(new UnstoppableForceFlux());
         addChannel(new Propel());     // R

@@ -4,7 +4,7 @@ import me.limbo.smp.darkness.reflection.InvisibilityFlux;
 import me.limbo.smp.darkness.reflection.MirroredEffectsPassive;
 import me.limbo.smp.darkness.reflection.PhasingPassive;
 import me.limbo.smp.darkness.reflection.RealityShatter;
-import me.limbo.smp.darkness.reflection.ReflectedConstructs;
+import me.limbo.smp.darkness.reflection.ReflectedConstruct;
 import org.bukkit.Color;
 
 /** Reflection - mirrors, echoes, shattered glass. White / silvery blue (the one darkness allowed pale particles). */
@@ -21,6 +21,6 @@ public final class ReflectionDarkness extends Darkness {
         addPassive(new PhasingPassive());
         setFluxPassive(new InvisibilityFlux());
         addChannel(new RealityShatter());      // R
-        addChannel(new ReflectedConstructs()); // L
+        addChannel(new ReflectedConstruct()); // L
     }
 }

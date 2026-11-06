@@ -130,7 +130,7 @@ public final class LimboCommand implements TabExecutor {
         if (!c.enabled()) { Msg.send(s, "<gray>Cursed items are not active."); return; }
         Msg.send(s, "<#9b59ff>Cursed items: <white>" + Msg.esc(c.describe()) + " <gray>(change in <white>"
                 + TimeUtil.format(c.millisUntilRotation()) + "<gray>)");
-        Msg.send(s, "<gray>Hold one: your passives run and your first ability works at double cooldown.");
+        Msg.send(s, "<gray>Hold one to use your first ability at double cooldown (no passives).");
     }
 
     // ---------------- admin ----------------

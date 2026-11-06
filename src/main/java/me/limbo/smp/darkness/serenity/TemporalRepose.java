@@ -69,22 +69,22 @@ public final class TemporalRepose extends Channel implements Listener {
         if (t instanceof Player victim) victim.sendActionBar(Msg.parse("<#ffafcd>Your time slows..."));
         ctx.player().sendActionBar(Msg.parse("<#ffafcd>Temporal Repose"));
 
+        final org.bukkit.entity.ItemDisplay halo = me.limbo.smp.util.FlatFx.spawn(t.getLocation().add(0, t.getHeight() + 0.4, 0),
+                me.limbo.smp.util.FlatFx.HALO, org.bukkit.entity.Display.Billboard.VERTICAL);
         new BukkitRunnable() {
             int ticks = 0;
             @Override public void run() {
                 ticks += 4;
                 if (!t.isValid() || t.isDead() || !pl.status().isTimeSlowed(id) || ticks > durationTicks + 8) {
+                    me.limbo.smp.util.FlatFx.remove(halo);
                     cancel();
                     return;
                 }
-                // slow clock face above the head: ring + one hand that barely moves
-                Location c = t.getLocation().add(0, t.getHeight() + 0.5, 0);
-                ParticleUtil.ring(c, 0.45, 16, SerenityDarkness.COLOR);
-                double a = ticks * 0.04;
-                for (int i = 1; i <= 3; i++) {
-                    Location l = c.clone().add(Math.cos(a) * 0.15 * i, 0, Math.sin(a) * 0.15 * i);
-                    t.getWorld().spawnParticle(Particle.DUST, l, 1, 0, 0, 0, 0, new Particle.DustOptions(SerenityDarkness.COLOR, 0.8f), true);
-                }
+                // the halo: a flat model that follows the head and breathes very slowly
+                double pulse = 1.0 + 0.06 * Math.sin(ticks * 0.08);
+                float size = (float) (1.0 * pulse);
+                me.limbo.smp.util.FlatFx.move(halo, t.getLocation().add(0, t.getHeight() + 0.4, 0), 4);
+                me.limbo.smp.util.FlatFx.shape(halo, new org.joml.Vector3f(size, size, size), new org.joml.Quaternionf(), new org.joml.Quaternionf(), 4);
                 t.getWorld().spawnParticle(Particle.CHERRY_LEAVES, t.getLocation().add(0, 1, 0), 1, 0.3, 0.5, 0.3, 0.005);
             }
         }.runTaskTimer(pl, 0L, 4L);

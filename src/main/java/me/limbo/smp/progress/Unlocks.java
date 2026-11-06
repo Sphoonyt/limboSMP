@@ -38,7 +38,7 @@ import java.util.Set;
  * Locked by default on a fresh install (config: unlocks.lock-by-default). State lives in unlocks.yml.
  *  - NETHER:    portals into the Nether are cancelled.
  *  - VILLAGERS: villagers can't be traded with.
- *  - RIFTS:     shadow rifts don't spawn on their own, and Entropy only gets the early (half) strength.
+ *  - RIFTS:     shadow rifts don't spawn on their own.
  *  - ENCHANTS:  enchants are capped (events.progression.enchant-cap, 0 = no cap) at the table and the anvil.
  */
 public final class Unlocks implements Listener {

@@ -282,12 +282,12 @@ public final class ServerStartEvent implements Listener {
     private void broadcastCursed(List<Material> items) {
         Bukkit.broadcast(Msg.parse(Msg.PREFIX + "<#9b59ff>The cursed items have been revealed:"));
         for (Material m : items) Bukkit.broadcast(Msg.parse("<dark_gray>  - <white>" + Msg.esc(me.limbo.smp.item.CursedItems.prettyName(m))));
-        Bukkit.broadcast(Msg.parse("<gray>Hold one and your darkness answers: your passives, and your first ability at double cooldown."));
+        Bukkit.broadcast(Msg.parse("<gray>Hold one to use your first ability, at double cooldown."));
     }
 
     private void sendCursedTo(Player p) {
         Msg.send(p, "<#9b59ff>The cursed items are: <white>" + Msg.esc(plugin.cursed().describe()));
-        Msg.send(p, "<gray>Hold one and your darkness answers: your passives, and your first ability at double cooldown.");
+        Msg.send(p, "<gray>Hold one to use your first ability, at double cooldown.");
     }
 
     // ------------------------------------------------------------ 4. the Big Rift

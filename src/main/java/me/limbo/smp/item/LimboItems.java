@@ -42,7 +42,7 @@ public final class LimboItems {
     private volatile PlayerProfile coreProfile;
     private static final String CORE_SKIN_NAME = "NormalPlayerSus";
     /** Bump when the totem description format changes so existing totems get rewritten. */
-    private static final int TOTEM_VERSION = 5;
+    private static final int TOTEM_VERSION = 7;
 
     public LimboItems(LimboPlugin plugin) {
         this.plugin = plugin;
@@ -102,6 +102,9 @@ public final class LimboItems {
         cmd.setStrings(List.of("null_totem"));
         cmd.setColors(List.of(d != null ? d.color() : Color.WHITE));
         m.setCustomModelDataComponent(cmd);
+        // each darkness has its own totem texture (minecraft:totems/<id> in the resource pack); a totem with no
+        // darkness keeps the neutral tinted model
+        m.setItemModel(d != null ? NamespacedKey.minecraft("totems/" + d.id()) : null);
         var pdc = m.getPersistentDataContainer();
         pdc.set(orbKey, PersistentDataType.BYTE, (byte) 1);
         pdc.set(totemKey, PersistentDataType.STRING, d != null ? d.id() : "none");
@@ -126,6 +129,8 @@ public final class LimboItems {
         if (d == null) return l;
 
         String c = "<" + hex(d.color()) + ">";
+        l.add(Component.empty());
+        l.add(plain("<gray>" + SmallCaps.of("Darkness: ") + c + Msg.esc(SmallCaps.of(d.displayName()))));
         l.add(Component.empty());
         l.add(plain("<gray>" + SmallCaps.of("Passives:")));
         for (Passive p : d.passives()) l.add(plain(c + "- " + Msg.esc(SmallCaps.of(p.name()))));

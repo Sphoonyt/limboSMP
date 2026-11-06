@@ -60,6 +60,7 @@ public final class InvisibilityFlux implements FluxPassive {
     private void updateVisibility() {
         LimboPlugin pl = LimboPlugin.get();
         for (Player target : Bukkit.getOnlinePlayers()) {
+            if (ReflectedConstruct.isInvisible(target.getUniqueId())) continue; // Reflected Construct is hiding them
             if (!pl.fluxActive(target, ReflectionDarkness.ID)) {
                 reveal(target);
                 continue;

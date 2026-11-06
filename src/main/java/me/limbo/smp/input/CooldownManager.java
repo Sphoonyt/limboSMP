@@ -32,5 +32,11 @@ public final class CooldownManager {
         return out;
     }
 
+    /** Removes one cooldown (e.g. Black Flash being brought off cooldown). */
+    public void clear(UUID id, String key) {
+        Map<String, Long> m = expiries.get(id);
+        if (m != null) m.remove(key);
+    }
+
     public void clear(UUID id) { expiries.remove(id); }
 }

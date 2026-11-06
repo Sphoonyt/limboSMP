@@ -26,7 +26,7 @@ import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * R - a 7 block zone that stays where you cast it for 10s. Every 2 seconds enemies inside take 1 heart of true
+ * R - a 7 block zone that moves with you for 10s. Every 2 seconds enemies inside take 1 heart of true
  * damage and allies (you and players you trust) heal 1 heart. 90s cooldown.
  */
 public final class ImbalanceRing extends Channel {
@@ -63,22 +63,23 @@ public final class ImbalanceRing extends Channel {
     private final class Cast extends BukkitRunnable {
         private final Player caster;
         private final World w;
-        private final Location center;
+        private Location center;
         private int ticks = 0;
         private boolean done = false;
 
         Cast(Player caster) {
             this.caster = caster;
             this.w = caster.getWorld();
-            this.center = caster.getLocation().clone(); // fixed: the zone does not follow you
+            this.center = caster.getLocation().clone();
         }
 
         @Override
         public void run() {
-            if (!caster.isOnline() || ticks >= DURATION_TICKS) {
+            if (!caster.isOnline() || caster.isDead() || caster.getWorld() != w || ticks >= DURATION_TICKS) {
                 finish();
                 return;
             }
+            center = caster.getLocation().clone(); // the zone follows you
             ticks += 2;
             draw();
             if (ticks % PULSE_TICKS == 0) pulse();

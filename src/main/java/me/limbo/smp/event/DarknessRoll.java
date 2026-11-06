@@ -72,7 +72,7 @@ public final class DarknessRoll {
                         .append(name(next, false).color(net.kyori.adventure.text.format.NamedTextColor.DARK_GRAY))
                         .append(Component.text(" ▸", net.kyori.adventure.text.format.NamedTextColor.DARK_GRAY));
                 p.showTitle(Title.title(name(cur, true), last
-                                ? MiniMessage.miniMessage().deserialize("<gray>" + result.description())
+                                ? Component.empty()
                                 : sub,
                         Title.Times.times(Duration.ZERO, Duration.ofMillis(last ? 3500 : 400), Duration.ofMillis(last ? 800 : 0))));
 

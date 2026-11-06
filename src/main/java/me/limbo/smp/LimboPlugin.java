@@ -123,6 +123,7 @@ public final class LimboPlugin extends JavaPlugin {
         pm.registerEvents(events.progression(), this);
         pm.registerEvents(events.serverStart(), this);
         pm.registerEvents(events.progression().pedestals(), this);
+        pm.registerEvents(new me.limbo.smp.darkness.inertia.WindChargeCooldown(this), this);
         pm.registerEvents(unlocks, this);
         pm.registerEvents(cursed, this);
         pm.registerEvents(rewards, this);
@@ -188,22 +189,16 @@ public final class LimboPlugin extends JavaPlugin {
         cursed.load();
     }
 
-    /** True if the player is holding the null totem or (while cursed items are on) an active cursed item. */
-    public boolean holdingFocus(Player p) {
-        return items.isHoldingOrb(p) || cursed.isHoldingActive(p);
-    }
-
     /**
-     * True if the player's passives are currently running for this darkness: a null totem in the main inventory,
-     * or an active cursed item in hand.
+     * True if the player's passives are currently running for this darkness: a null totem in the main inventory.
+     * (Cursed items only give the first channel, never passives.)
      */
     public boolean passivesActive(Player p, String darknessId) {
         if (p.isDead() || !darknessId.equals(data.getDarknessId(p.getUniqueId()))) return false;
         if (status.isSilenced(p.getUniqueId())) return false; // Silencing Maw: the whole darkness is off
-        boolean cursedHeld = cursed.isHoldingActive(p);
-        if (!items.hasOrbInInventory(p) && !cursedHeld) return false;
+        if (!items.hasOrbInInventory(p)) return false; // cursed items never give passives
         // darkness fatigue: passives only work while the totem is actually held
-        return !fatigue.isFatigued(p.getUniqueId()) || items.isHoldingOrb(p) || cursedHeld;
+        return !fatigue.isFatigued(p.getUniqueId()) || items.isHoldingOrb(p);
     }
 
     /**
@@ -216,10 +211,10 @@ public final class LimboPlugin extends JavaPlugin {
                 && passivesActive(p, ChimeraDarkness.ID);
     }
 
-    /** True if the player's flux passive is running (totem in main hand or offhand, or a cursed item if allowed). */
+    /** True if the player's flux passive is running (totem in main hand or offhand). */
     public boolean fluxActive(Player p, String darknessId) {
         if (!passivesActive(p, darknessId)) return false;
-        return items.isHoldingOrb(p) || (cursed.grantsFlux() && cursed.isHoldingActive(p));
+        return items.isHoldingOrb(p);
     }
 
     public boolean toggleDebug(UUID id) {

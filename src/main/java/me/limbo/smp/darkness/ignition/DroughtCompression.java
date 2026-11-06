@@ -26,13 +26,13 @@ import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * R - ring around you for 3s (moves with you). Water inside evaporates for good (it sizzles);
- * enemy players lose 2 hunger bars every second. 70s cooldown.
+ * R - ring on the spot where you cast it for 3s (it stays put). Water inside evaporates for good (it sizzles);
+ * enemy players lose a little hunger each second (a third of what it used to: 4 points over the 3 seconds). 70s cooldown.
  */
 public final class DroughtCompression extends Channel {
     private static final double RADIUS = 7.0;
     private static final int DURATION_TICKS = 60;  // 3s
-    private static final int HUNGER_LOSS = 4; // 2 bars = 4 food points
+    private static final int[] HUNGER_LOSS = {1, 1, 2}; // 4 food points in total over the three drains
     private static final int MAX_SIZZLES_PER_PASS = 4;
     private static final Set<Material> WATER_THINGS = EnumSet.of(
             Material.WATER, Material.BUBBLE_COLUMN, Material.KELP, Material.KELP_PLANT,
@@ -66,21 +66,26 @@ public final class DroughtCompression extends Channel {
 
     private final class Cast extends BukkitRunnable {
         private final Player p;
+        private final Location origin;
         private int ticks = 0;
+        private int pass = 0;
         private boolean done = false;
 
-        Cast(Player p) { this.p = p; }
+        Cast(Player p) {
+            this.p = p;
+            this.origin = p.getLocation().clone(); // the ring stays where it was cast
+        }
 
         @Override
         public void run() {
-            if (!p.isOnline() || p.isDead() || ticks >= DURATION_TICKS) {
+            if (!p.isOnline() || ticks >= DURATION_TICKS) {
                 finish();
                 return;
             }
-            Location c = p.getLocation();
+            Location c = origin;
             drawRing(c);
             evaporate(c);
-            if (ticks % 20 == 0) drain(c);
+            if (ticks % 20 == 0) drain(c, HUNGER_LOSS[Math.min(pass++, HUNGER_LOSS.length - 1)]);
             ticks += 2;
         }
 
@@ -132,12 +137,12 @@ public final class DroughtCompression extends Channel {
             }
         }
 
-        private void drain(Location c) {
+        private void drain(Location c, int loss) {
             for (Player t : c.getWorld().getPlayers()) {
                 if (t.getLocation().distanceSquared(c) > RADIUS * RADIUS) continue;
                 if (!Targeting.canHarm(p, t)) continue;
-                t.setFoodLevel(Math.max(0, t.getFoodLevel() - HUNGER_LOSS));
-                t.setSaturation(0f);
+                t.setSaturation(Math.max(0f, t.getSaturation() - loss));
+                t.setFoodLevel(Math.max(0, t.getFoodLevel() - loss));
                 Feedback.affected(t, "Drought Compression", p);
                 ParticleUtil.blissDust(t.getLocation().add(0, 1, 0), IgnitionDarkness.COLOR, 8, 0.4);
                 t.sendActionBar(Msg.parse("<#ff6e14>Parched..."));

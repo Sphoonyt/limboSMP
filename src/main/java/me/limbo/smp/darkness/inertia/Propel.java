@@ -101,6 +101,10 @@ public final class Propel extends Channel {
             if (TrueDamage.apply(p, le, THROUGH_DAMAGE)) {
                 Feedback.affected(le, NAME, p);
                 ParticleUtil.blissDust(le.getLocation().add(0, 1, 0), InertiaDarkness.DARK, InertiaDarkness.LIGHT, 14, 0.4);
+                // the impact is a flat starburst model that pops open on them, spun a random amount each time
+                me.limbo.smp.util.FlatFx.pop(le.getBoundingBox().getCenter().toLocation(w), me.limbo.smp.util.FlatFx.IMPACT,
+                        org.bukkit.entity.Display.Billboard.CENTER, 0.6f, 3.2f, 5,
+                        (float) (java.util.concurrent.ThreadLocalRandom.current().nextDouble() * Math.PI));
                 me.limbo.smp.util.Sfx.play(le.getLocation(), org.bukkit.Sound.ENTITY_PLAYER_ATTACK_STRONG, 1f, 0.8f, me.limbo.smp.util.Sfx.Theme.INERTIA);
             }
         }

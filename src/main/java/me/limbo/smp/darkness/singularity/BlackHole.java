@@ -16,12 +16,16 @@ import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.World;
 import org.bukkit.block.Block;
+import org.bukkit.entity.Display;
+import org.bukkit.entity.ItemDisplay;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
+import org.joml.Quaternionf;
+import org.joml.Vector3f;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -79,6 +83,10 @@ public final class BlackHole extends Channel {
         private int expandTicks = 0;
         private boolean expanding = false;
         private boolean done = false;
+        private final ItemDisplay ring;   // the accretion ring (flat model)
+        private final ItemDisplay ring2;  // a second, larger ring turning the other way
+        private final Vector axis = new Vector(0.35, 1, 0.2).normalize();
+        private final Vector axis2 = new Vector(-0.25, 1, 0.3).normalize();
 
         Cast(Player p) {
             this.p = p;
@@ -86,6 +94,18 @@ public final class BlackHole extends Channel {
             Location eye = p.getEyeLocation();
             this.dir = eye.getDirection().normalize();
             this.pos = eye.clone().add(dir.clone().multiply(1.8));
+            this.ring = me.limbo.smp.util.FlatFx.spawn(pos, me.limbo.smp.util.FlatFx.RING, Display.Billboard.FIXED);
+            this.ring2 = me.limbo.smp.util.FlatFx.spawn(pos, me.limbo.smp.util.FlatFx.RING, Display.Billboard.FIXED);
+        }
+
+        /** Places and spins the flat rings. `diameter` is the outer width of the first ring. */
+        private void rings(double diameter, double spin) {
+            me.limbo.smp.util.FlatFx.move(ring, pos, 1);
+            me.limbo.smp.util.FlatFx.shape(ring, new Vector3f((float) diameter, (float) diameter, 1f),
+                    me.limbo.smp.util.FlatFx.zTo(axis), new Quaternionf().rotateZ((float) spin), 1);
+            me.limbo.smp.util.FlatFx.move(ring2, pos, 1);
+            me.limbo.smp.util.FlatFx.shape(ring2, new Vector3f((float) (diameter * 1.3), (float) (diameter * 1.3), 1f),
+                    me.limbo.smp.util.FlatFx.zTo(axis2), new Quaternionf().rotateZ((float) (-spin * 0.7)), 1);
         }
 
         @Override
@@ -113,6 +133,7 @@ public final class BlackHole extends Channel {
                 expandTicks++;
                 double r = END_R + (FINAL_R - END_R) * expandTicks / EXPAND_TICKS;
                 renderShell(r);
+                rings(r * 3.4, expandTicks * 0.6);
                 clearWebs(r);
                 for (LivingEntity e : enemiesWithin(r)) {
                     if (!afflicted.add(e.getUniqueId())) continue;
@@ -130,6 +151,8 @@ public final class BlackHole extends Channel {
             done = true;
             try { cancel(); } catch (IllegalStateException ignored) {}
             casts.remove(this);
+            me.limbo.smp.util.FlatFx.remove(ring);
+            me.limbo.smp.util.FlatFx.remove(ring2);
         }
 
         // ---- gameplay ----
@@ -190,17 +213,8 @@ public final class BlackHole extends Channel {
                 Vector v = randomUnit(rnd).multiply(r * 0.9 * Math.cbrt(rnd.nextDouble()));
                 w.spawnParticle(Particle.DUST, pos.clone().add(v), 1, 0, 0, 0, 0, core, true);
             }
-            // spinning accretion ring
-            Vector axis = new Vector(0.35, 1, 0.2).normalize();
-            Vector u = axis.clone().crossProduct(new Vector(1, 0, 0)).normalize();
-            Vector v2 = axis.clone().crossProduct(u).normalize();
-            Particle.DustTransition rim = new Particle.DustTransition(SingularityDarkness.LIGHT, ParticleUtil.VOID, 1.2f);
-            double spin = ticks * 0.25;
-            for (int i = 0; i < 24; i++) {
-                double a = spin + 2 * Math.PI * i / 24;
-                Vector off = u.clone().multiply(Math.cos(a) * r * 1.5).add(v2.clone().multiply(Math.sin(a) * r * 1.5));
-                w.spawnParticle(Particle.DUST_COLOR_TRANSITION, pos.clone().add(off), 1, 0, 0, 0, 0, rim, true);
-            }
+            // the accretion ring is a flat model now, see rings()
+            rings(r * 3.2, ticks * 0.25);
             // matter spiralling in
             for (int i = 0; i < 4; i++) {
                 Vector off = randomUnit(rnd).multiply(r * 2.2);

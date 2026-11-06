@@ -105,9 +105,6 @@ public final class CursedItems implements Listener {
 
     private int activeCount() { return Math.max(1, plugin.getConfig().getInt("cursed-items.active-count", 2)); }
 
-    /** Whether the flux passive also works while only a cursed item is held. */
-    public boolean grantsFlux() { return plugin.getConfig().getBoolean("cursed-items.flux", true); }
-
     public List<Material> pool() {
         List<String> names = plugin.getConfig().getStringList("cursed-items.pool");
         if (names.isEmpty()) names = DEFAULT_POOL;
@@ -190,7 +187,7 @@ public final class CursedItems implements Listener {
     private void notifyHeld(Player p) {
         Darkness d = plugin.data().getDarkness(p);
         if (d == null) return;
-        p.sendActionBar(Msg.parse("<dark_purple>A cursed item. <gray>Your <white>" + Msg.esc(d.displayName()) + "<gray> stirs."));
+        p.sendActionBar(Msg.parse("<dark_purple>A cursed item. <gray>Your <white>" + Msg.esc(d.displayName()) + "<gray> answers. <dark_gray>(first ability, double cooldown)"));
         p.playSound(p.getLocation(), Sound.BLOCK_SCULK_SENSOR_CLICKING, 0.6f, 0.6f);
     }
 

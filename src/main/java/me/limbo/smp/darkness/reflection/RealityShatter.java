@@ -18,6 +18,8 @@ import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.enchantments.Enchantment;
+import org.bukkit.entity.Display;
+import org.bukkit.entity.ItemDisplay;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -29,9 +31,13 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Vector;
+import org.joml.Quaternionf;
+import org.joml.Vector3f;
+import me.limbo.smp.util.FlatFx;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
@@ -55,6 +61,34 @@ public final class RealityShatter extends Channel implements Listener {
 
     private final Map<UUID, BukkitTask> active = new HashMap<>();
 
+    private static final int SHARDS = 12;
+
+    /** One energy shard flying around the dome. */
+    private static final class Shard {
+        final ItemDisplay display;
+        final double lon0, latAmp, latSpeed, latPhase, lonSpeed, size, spin;
+
+        Shard(ItemDisplay display, ThreadLocalRandom r) {
+            this.display = display;
+            this.lon0 = r.nextDouble(Math.PI * 2);
+            this.latAmp = r.nextDouble(0.35, 1.2);              // how far up and down it swings (radians)
+            this.latSpeed = r.nextDouble(0.02, 0.05) * (r.nextBoolean() ? 1 : -1);
+            this.latPhase = r.nextDouble(Math.PI * 2);
+            this.lonSpeed = r.nextDouble(0.035, 0.08) * (r.nextBoolean() ? 1 : -1);
+            this.size = r.nextDouble(0.55, 1.1);
+            this.spin = r.nextDouble(0.2, 0.5);
+        }
+
+        /** Point on the dome at tick t (dome centre = origin, unit radius). */
+        Vector at(double t) {
+            double lat = latAmp * Math.sin(t * latSpeed + latPhase);
+            double lon = lon0 + t * lonSpeed;
+            return new Vector(Math.cos(lat) * Math.cos(lon), Math.sin(lat), Math.cos(lat) * Math.sin(lon));
+        }
+    }
+
+    private final Map<UUID, List<Shard>> shards = new HashMap<>();
+
     public RealityShatter() {
         super("reality_shatter", NAME, "Air swings hit every enemy nearby.", ChannelInput.R, 90_000L);
     }
@@ -64,6 +98,12 @@ public final class RealityShatter extends Channel implements Listener {
         Player p = ctx.player();
         UUID id = p.getUniqueId();
         end(id);
+        List<Shard> mine = new ArrayList<>();
+        ThreadLocalRandom rnd0 = ThreadLocalRandom.current();
+        for (int i = 0; i < SHARDS; i++) {
+            mine.add(new Shard(FlatFx.spawn(p.getLocation().add(0, 1, 0), FlatFx.SHARD, Display.Billboard.FIXED), rnd0));
+        }
+        shards.put(id, mine);
         BukkitTask t = new BukkitRunnable() {
             int ticks = 0;
             @Override public void run() {
@@ -74,6 +114,7 @@ public final class RealityShatter extends Channel implements Listener {
                     return;
                 }
                 draw(p, ticks);
+                flyShards(p, mine, ticks);
             }
         }.runTaskTimer(LimboPlugin.get(), 0L, 2L);
         active.put(id, t);
@@ -86,6 +127,8 @@ public final class RealityShatter extends Channel implements Listener {
     private void end(UUID id) {
         BukkitTask t = active.remove(id);
         if (t != null) t.cancel();
+        List<Shard> s = shards.remove(id);
+        if (s != null) for (Shard sh : s) FlatFx.remove(sh.display);
     }
 
     @Override
@@ -172,6 +215,28 @@ public final class RealityShatter extends Channel implements Listener {
         for (int k = 0; k < 2; k++) {
             Location l = c.clone().add(randomUnit(rnd).multiply(RADIUS));
             w.spawnParticle(Particle.BLOCK, l, 1, 0.1, 0.1, 0.1, 0, glass, true);
+        }
+    }
+
+    /**
+     * Energy shards (flat models) orbiting the dome: each one swings around the sphere on its own path, pointed along
+     * the way it is travelling and tumbling about that axis.
+     */
+    private void flyShards(Player p, List<Shard> list, int ticks) {
+        Location c = p.getLocation().add(0, 1.0, 0);
+        double radius = RADIUS * 0.96;
+        for (Shard s : list) {
+            Vector now = s.at(ticks);
+            Vector next = s.at(ticks + 2);
+            Vector dir = next.clone().subtract(now);
+            Location at = c.clone().add(now.clone().multiply(radius));
+            FlatFx.move(s.display, at, 2);
+            FlatFx.shape(s.display, new Vector3f((float) s.size, (float) (s.size * 1.4), (float) s.size),
+                    FlatFx.yTo(dir), new Quaternionf().rotateY((float) (ticks * s.spin)), 2);
+        }
+        if (ticks % 8 == 0) { // a glint where they pass
+            Shard s = list.get(ThreadLocalRandom.current().nextInt(list.size()));
+            c.getWorld().spawnParticle(Particle.END_ROD, c.clone().add(s.at(ticks).multiply(radius)), 1, 0.05, 0.05, 0.05, 0.01, null, true);
         }
     }
 

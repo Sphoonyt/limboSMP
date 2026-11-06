@@ -5,6 +5,7 @@ import me.limbo.smp.darkness.Channel;
 import me.limbo.smp.darkness.ChannelContext;
 import me.limbo.smp.darkness.ChannelInput;
 import me.limbo.smp.darkness.EntropyDarkness;
+import me.limbo.smp.util.ChainFx;
 import me.limbo.smp.util.Feedback;
 import me.limbo.smp.util.Msg;
 import me.limbo.smp.util.ParticleUtil;
@@ -38,7 +39,7 @@ import java.util.UUID;
 import java.util.function.Predicate;
 
 /**
- * L - shoot a chain of crimson energy. It lashes onto the first enemy it hits and tethers them to you for 8s.
+ * R - shoot a chain of crimson energy. It lashes onto the first enemy it hits and tethers them to you for 12s.
  * The tethered enemy has Weakness and Wither, your melee hits against them are auto-crits, and they can't get
  * more than 20 blocks away from you (they're launched back). 80s cooldown.
  */
@@ -46,7 +47,7 @@ public final class Enchain extends Channel implements Listener {
     private static final String NAME = "Enchain";
     private static final double SPEED = 2.0;        // blocks per tick
     private static final double RANGE = 28.0;
-    private static final int TETHER_TICKS = 160;    // 8s
+    private static final int TETHER_TICKS = 240;    // 12s
     private static final double LEASH = 20.0;
     private static final double CRIT_MULTIPLIER = 1.3;
 
@@ -55,6 +56,7 @@ public final class Enchain extends Channel implements Listener {
         final UUID target;
         int ticks = 0;
         BukkitTask task;
+        ChainFx chain;
         Tether(UUID caster, UUID target) { this.caster = caster; this.target = target; }
     }
 
@@ -62,7 +64,7 @@ public final class Enchain extends Channel implements Listener {
     private final Map<UUID, Tether> tethers = new HashMap<>();
 
     public Enchain() {
-        super("enchain", NAME, "Chain that tethers an enemy to you.", ChannelInput.L, 80_000L);
+        super("enchain", NAME, "Chain that tethers an enemy to you.", ChannelInput.R, 80_000L);
     }
 
     @Override
@@ -76,26 +78,27 @@ public final class Enchain extends Channel implements Listener {
         me.limbo.smp.util.Sfx.play(eye, org.bukkit.Sound.ENTITY_WITHER_SHOOT, 0.8f, 1.6f, me.limbo.smp.util.Sfx.Theme.ENTROPY);
         me.limbo.smp.util.Sfx.add(eye, org.bukkit.Sound.BLOCK_ANVIL_LAND, 0.5f, 0.5f);
 
+        final ChainFx fx = new ChainFx();
         Predicate<Entity> filter = e -> e instanceof LivingEntity le && !e.equals(p)
                 && Targeting.canHarm(p, le) && Targeting.isEnemy(le);
 
         new BukkitRunnable() {
             double travelled = 0;
             @Override public void run() {
-                if (!p.isOnline() || p.isDead()) { cancel(); return; }
+                if (!p.isOnline() || p.isDead()) { fx.clear(); cancel(); return; }
                 RayTraceResult r = w.rayTrace(pos, dir, SPEED, FluidCollisionMode.NEVER, true, 0.35, filter);
                 if (r != null) {
                     Location at = r.getHitPosition().toLocation(w);
-                    drawLine(p.getLocation().add(0, 1.0, 0), at);
-                    if (r.getHitEntity() instanceof LivingEntity target) lash(p, target);
-                    else ParticleUtil.blissDust(at, EntropyDarkness.COLOR, 10, 0.2);
+                    fx.update(p.getLocation().add(0, 1.0, 0), at);
+                    if (r.getHitEntity() instanceof LivingEntity target) lash(p, target, fx);
+                    else { fx.clear(); ParticleUtil.blissDust(at, EntropyDarkness.COLOR, 10, 0.2); }
                     cancel();
                     return;
                 }
                 pos.add(dir.clone().multiply(SPEED));
                 travelled += SPEED;
-                drawLine(p.getLocation().add(0, 1.0, 0), pos); // the chain trails back to your hand
-                if (travelled >= RANGE) cancel();
+                fx.update(p.getLocation().add(0, 1.0, 0), pos); // the chain trails back to your hand
+                if (travelled >= RANGE) { fx.clear(); cancel(); }
             }
         }.runTaskTimer(LimboPlugin.get(), 0L, 1L);
         return true;
@@ -103,9 +106,10 @@ public final class Enchain extends Channel implements Listener {
 
     // ------------------------------------------------------------ the tether
 
-    private void lash(Player caster, LivingEntity target) {
+    private void lash(Player caster, LivingEntity target, ChainFx chain) {
         end(caster.getUniqueId());
         Tether t = new Tether(caster.getUniqueId(), target.getUniqueId());
+        t.chain = chain;
         tethers.put(caster.getUniqueId(), t);
 
         applyEffects(target, TETHER_TICKS);
@@ -136,7 +140,7 @@ public final class Enchain extends Channel implements Listener {
                     victim.getWorld().playSound(victim.getLocation(), Sound.ENTITY_PLAYER_ATTACK_KNOCKBACK, 0.6f, 0.6f);
                 }
                 if (t.ticks % 20 == 0) applyEffects(victim, TETHER_TICKS - t.ticks); // keep it on if cleansed
-                drawLine(c.getLocation().add(0, 1.0, 0), victim.getBoundingBox().getCenter().toLocation(c.getWorld()));
+                t.chain.update(c.getLocation().add(0, 1.0, 0), victim.getBoundingBox().getCenter().toLocation(c.getWorld()));
             }
         }.runTaskTimer(LimboPlugin.get(), 1L, 1L);
     }
@@ -157,6 +161,7 @@ public final class Enchain extends Channel implements Listener {
         Tether t = tethers.remove(casterId);
         if (t == null) return;
         if (t.task != null) t.task.cancel();
+        if (t.chain != null) t.chain.clear();
         Player c = Bukkit.getPlayer(casterId);
         if (c != null && c.isOnline()) c.sendActionBar(Msg.parse("<gray>The chain breaks."));
     }
@@ -164,23 +169,6 @@ public final class Enchain extends Channel implements Listener {
     @Override
     public void onShutdown() {
         for (UUID id : new ArrayList<>(tethers.keySet())) end(id);
-    }
-
-    /** A chain of alternating crimson and black links between two points. */
-    private void drawLine(Location from, Location to) {
-        World w = from.getWorld();
-        Vector v = to.toVector().subtract(from.toVector());
-        double len = v.length();
-        if (len < 0.5) return;
-        Vector step = v.clone().normalize().multiply(0.45);
-        Particle.DustOptions crimson = new Particle.DustOptions(EntropyDarkness.COLOR, 1.0f);
-        Particle.DustOptions dark = new Particle.DustOptions(ParticleUtil.VOID, 1.1f);
-        Location l = from.clone();
-        int n = (int) (len / 0.45);
-        for (int i = 0; i < n; i++) {
-            l.add(step);
-            w.spawnParticle(Particle.DUST, l, 1, 0, 0, 0, 0, (i % 2 == 0) ? crimson : dark, true);
-        }
     }
 
     // ------------------------------------------------------------ auto-crit

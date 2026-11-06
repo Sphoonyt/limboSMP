@@ -2,7 +2,7 @@ package me.limbo.smp.darkness;
 
 import me.limbo.smp.darkness.entropy.DisruptionPassive;
 import me.limbo.smp.darkness.entropy.Enchain;
-import me.limbo.smp.darkness.entropy.RuinousSlash;
+import me.limbo.smp.darkness.entropy.BlackFlash;
 import me.limbo.smp.darkness.entropy.SpinecutterFlux;
 import me.limbo.smp.darkness.entropy.StrengthPassive;
 import org.bukkit.Color;
@@ -17,7 +17,7 @@ public final class EntropyDarkness extends Darkness {
         addPassive(new StrengthPassive());
         addPassive(new DisruptionPassive());
         setFluxPassive(new SpinecutterFlux());
-        addChannel(new Enchain());     // L
-        addChannel(new RuinousSlash()); // R
+        addChannel(new Enchain());     // R
+        addChannel(new BlackFlash());  // H
     }
 }
