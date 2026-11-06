@@ -1,0 +1,6 @@
+{
+	"parent": "item/totems/base",
+	"textures": {
+	  "layer0": "item/totems/inertia"
+	}
+}

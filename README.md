@@ -48,10 +48,10 @@ while you are holding the null totem (instead of just carrying it).
 - Admins in spectator are never picked or teleported.
 
 ## Progression locks
-`/limbo unlock|lock <nether|villagers|rifts|enchants>`, `/limbo unlocks`. Everything starts locked. While `rifts` is locked Entropy only gets +1.5 attack damage instead of Strength I and rifts don't auto-spawn.
+`/limbo unlock|lock <nether|villagers|rifts|enchants>`, `/limbo unlocks`. Everything starts locked. While `rifts` is locked rifts don't auto-spawn.
 
 ## Cursed items
-`/limbo cursed [roll|on|off]`. A different set of inert items is active each day (`cursed-items.*`). Holding one runs your passives and lets you use your first channel at double cooldown.
+`/limbo cursed [roll|on|off]`. A different set of inert items is active each day (`cursed-items.*`). Holding one lets you use your first channel at double cooldown (no passives).
 
 ## Devotion Core (reroll item) and rituals
 A head item (skin of NormalPlayerSus). Right click: it is consumed and a circle (ritual.radius) stays for ritual.seconds with a floating countdown; when it ends everyone inside is rerolled with the slot machine and the coordinates are announced. Admin: `/limbo give <player> core [n]`. Totem rewards are claimed with `/limbo claim`.
@@ -61,3 +61,12 @@ Started from a rift's menu (Soul Tracking button), not from the soul item.
 
 ## Chimera (green)
 Flat: Shield Splintering, Copycat (copies the hit enemy's second flat passive for 30s). Flux: Global Adaptation (5 hearts/second cap after the first hit, 15% less from channels that already hit you in the last hour; history in adaptation.yml). Channels: R Evolution (30s, 180s cd), L Silencing Maw (45s cd). Silenced players lose passives, flux and channels (`StatusManager#silence`).
+
+## Ability notes
+- Wind charges: `wind-charge.cooldown-seconds` (default 5). Inertia's Quick Charges passive halves it, rounded down.
+- Entropy: Strength I (permanent), Enchain on R (12s), Black Flash on H.
+- Reflection: Reflected Construct (L): 6 block blink in your movement direction, 5s true invisibility, exploding decoy, 2 charges of 45s.
+- Cursed items: first channel only, double cooldown, no passives or flux.
+
+## Resource pack / model effects
+`resourcepack/` holds the pack assets. Totems use `minecraft:totems/<darkness id>` item models (one texture per darkness, Chimera's is the Entropy texture recoloured green). Flat effect models (`limbo:effects/*`) are shown with ItemDisplay entities through `util/FlatFx`: black hole ring, Enchain chain links (`util/ChainFx`), Propel impact, Temporal Repose halo, Reality Shatter shards. Replace the textures in `assets/limbo/textures/effects/` with final art, keep the file names.
