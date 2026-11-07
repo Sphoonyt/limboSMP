@@ -137,21 +137,18 @@ public final class ReflectedConstruct extends Channel implements Listener {
             soonest = Math.min(soonest, slots[i]);
         }
         if (use < 0) {
-            p.sendActionBar(Msg.parse("<gray>Reflected Construct <dark_gray>- <red>" + TimeUtil.seconds(soonest - now)));
             return false;
         }
 
         Location origin = p.getLocation().clone();
         Location dest = destination(p, moveDirection(p));
         if (dest.distanceSquared(origin) < 1.0) {
-            p.sendActionBar(Msg.parse("<red>No room to move"));
             return false; // charge not spent
         }
 
         slots[use] = now + (ctx.cursed() ? RECHARGE_MS * 2 : RECHARGE_MS);
         int left = 0;
         for (long s : slots) if (s <= now) left++;
-        p.sendActionBar(Msg.parse("<#a5cdff>Reflected Construct <gray>" + left + "/" + CHARGES));
 
         // clone first, so it exists the instant you are gone
         Cast cast = new Cast(p, origin.toVector().subtract(dest.toVector()));
@@ -228,10 +225,11 @@ public final class ReflectedConstruct extends Channel implements Listener {
         UUID id = p.getUniqueId();
         long until = System.currentTimeMillis() + DURATION_TICKS * 50L;
         Invis inv = INVIS.get(id);
-        if (inv != null) { inv.until = until; return; } // a second charge just extends it
+        if (inv != null) { inv.until = until; LimboPlugin.get().screenFx().show(p, me.limbo.smp.status.ScreenFx.Fx.CONSTRUCT, DURATION_TICKS); return; } // a second charge just extends it
         Invis fresh = new Invis();
         fresh.until = until;
         INVIS.put(id, fresh);
+        LimboPlugin.get().screenFx().show(p, me.limbo.smp.status.ScreenFx.Fx.CONSTRUCT, DURATION_TICKS);
         LimboPlugin pl = LimboPlugin.get();
         fresh.task = new BukkitRunnable() {
             int t = 0;
@@ -256,6 +254,7 @@ public final class ReflectedConstruct extends Channel implements Listener {
         if (inv == null) return;
         if (inv.task != null) inv.task.cancel();
         LimboPlugin pl = LimboPlugin.get();
+        pl.screenFx().clear(p, me.limbo.smp.status.ScreenFx.Fx.CONSTRUCT);
         for (UUID u : inv.hiddenFrom) {
             Player v = Bukkit.getPlayer(u);
             if (v != null) v.showEntity(pl, p);
@@ -414,7 +413,6 @@ public final class ReflectedConstruct extends Channel implements Listener {
         TrueDamage.apply(owner, attacker, EXPLOSION_DAMAGE);
         attacker.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, BLIND_TICKS, 0, false, true, true));
         Feedback.affected(attacker, NAME, owner);
-        if (attacker instanceof Player ap) ap.sendActionBar(Msg.parse("<#a5cdff>It was only a reflection..."));
     }
 
     // ------------------------------------------------------------ interactions

@@ -126,6 +126,5 @@ public final class Propel extends Channel {
         LimboPlugin.get().status().knockbackImmunity(p, IMMUNITY_TICKS);
         ParticleUtil.blissDust(p.getLocation().add(0, 1, 0), InertiaDarkness.DARK, InertiaDarkness.LIGHT, 14, 0.5);
         me.limbo.smp.util.Sfx.play(p.getLocation(), org.bukkit.Sound.ITEM_SHIELD_BLOCK, 1f, 0.5f, me.limbo.smp.util.Sfx.Theme.INERTIA);
-        p.sendActionBar(Msg.parse("<#40e0d0>Knockback immunity (5s)"));
     }
 }

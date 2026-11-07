@@ -85,7 +85,6 @@ public final class BlackFlash extends Channel implements Listener {
         cancelNext.add(p.getUniqueId()); // consumed by onSwingHit this same event
         Bukkit.getScheduler().runTask(LimboPlugin.get(), () -> cancelNext.remove(p.getUniqueId()));
 
-        p.sendActionBar(Msg.parse("<#961428>Black Flash"));
         windUp(p, target);
         return true;
     }
@@ -111,14 +110,13 @@ public final class BlackFlash extends Channel implements Listener {
                 Location c = target.getBoundingBox().getCenter().toLocation(w);
                 double pull = 1.0 - t / (double) DELAY_TICKS;
                 // black sparks being sucked into the target, red crackle on the fist
-                for (int i = 0; i < 6; i++) {
-                    Vector d = randomUnit().multiply(0.6 + 1.8 * pull);
-                    w.spawnParticle(Particle.DUST, c.clone().add(d), 1, 0, 0, 0, 0, new Particle.DustOptions(BLACK, 1.5f), true);
+                for (int i = 0; i < 1; i++) { // a single dark mote drawn in from around them, never on top of them
+                    Vector d = randomUnit().multiply(1.4 + 1.2 * pull);
+                    w.spawnParticle(Particle.DUST, c.clone().add(d), 1, 0, 0, 0, 0, new Particle.DustOptions(BLACK, 1.0f), true);
                 }
-                if (t % 2 == 0) {
-                    w.spawnParticle(Particle.DUST, c, 2, 0.15, 0.2, 0.15, 0, new Particle.DustOptions(CRIMSON, 1.0f), true);
+                if (t % 4 == 0) {
                     Location hand = p.getEyeLocation().add(p.getLocation().getDirection().multiply(0.9)).subtract(0, 0.5, 0);
-                    bolt(w, hand, randomUnit().multiply(1.2), 4, 0.12, false);
+                    bolt(w, hand, randomUnit().multiply(0.9), 3, 0.1, false);
                 }
                 if (t == DELAY_TICKS - 4) w.playSound(c, Sound.ITEM_TRIDENT_THUNDER, 1.2f, 1.8f);
                 t++;
@@ -157,11 +155,11 @@ public final class BlackFlash extends Channel implements Listener {
             atk.addTransientModifier(new AttributeModifier(bonusKey, BONUS_ATTACK, AttributeModifier.Operation.ADD_NUMBER, EquipmentSlotGroup.ANY));
         }
         p.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE, BUFF_TICKS, 1, false, true, true));
+        LimboPlugin.get().screenFx().show(p, me.limbo.smp.status.ScreenFx.Fx.BLACK_FLASH, BUFF_TICKS);
 
         Window w = new Window();
         windows.put(id, w);
         w.end = Bukkit.getScheduler().runTaskLater(LimboPlugin.get(), () -> endWindow(id), BUFF_TICKS);
-        p.sendActionBar(Msg.parse("<#961428>Black Flash <gray>- +2 damage, Resistance II"));
     }
 
     private void removeBonus(AttributeInstance atk) {
@@ -173,6 +171,7 @@ public final class BlackFlash extends Channel implements Listener {
         if (w != null && w.end != null) w.end.cancel();
         Player p = Bukkit.getPlayer(id);
         if (p == null) return;
+        LimboPlugin.get().screenFx().clear(p, me.limbo.smp.status.ScreenFx.Fx.BLACK_FLASH);
         AttributeInstance atk = p.getAttribute(Attribute.ATTACK_DAMAGE);
         if (atk != null) removeBonus(atk);
     }
@@ -185,11 +184,9 @@ public final class BlackFlash extends Channel implements Listener {
         Window w = windows.get(p.getUniqueId());
         if (w == null || !(e.getEntity() instanceof LivingEntity) || Targeting.isClone(e.getEntity())) return;
         w.hits++;
-        p.sendActionBar(Msg.parse("<#961428>Black Flash <gray>- " + Math.min(w.hits, HITS_TO_RESET) + "/" + HITS_TO_RESET));
         if (w.hits >= HITS_TO_RESET) {
             w.hits = Integer.MIN_VALUE / 2; // only once per window
             LimboPlugin.get().dispatcher().cooldowns().clear(p.getUniqueId(), EntropyDarkness.ID + ":black_flash");
-            p.sendActionBar(Msg.parse("<#c81020>Black Flash is ready"));
             p.playSound(p.getLocation(), Sound.ENTITY_WITHER_SPAWN, 0.5f, 1.8f);
             p.playSound(p.getLocation(), Sound.ITEM_TRIDENT_RETURN, 1f, 1.5f);
         }
@@ -219,21 +216,20 @@ public final class BlackFlash extends Channel implements Listener {
         ThreadLocalRandom r = ThreadLocalRandom.current();
         Vector step = along.clone().multiply(1.0 / segments);
         Location cur = from.clone();
-        Particle.DustOptions core = new Particle.DustOptions(BLACK, 1.7f);
-        Particle.DustOptions edge = new Particle.DustOptions(CRIMSON, 0.8f);
+        Particle.DustOptions core = new Particle.DustOptions(BLACK, 1.0f);
+        Particle.DustOptions edge = new Particle.DustOptions(CRIMSON, 0.6f);
         for (int i = 0; i < segments; i++) {
             Vector j = new Vector(r.nextDouble(-jitter, jitter), r.nextDouble(-jitter, jitter), r.nextDouble(-jitter, jitter)).multiply(1 + i * 0.15);
             Location next = cur.clone().add(step).add(j);
-            for (double f = 0; f < 1; f += 0.34) {
+            for (double f = 0; f < 1; f += 0.5) {
                 Location l = cur.clone().add(next.clone().subtract(cur).toVector().multiply(f));
                 w.spawnParticle(Particle.DUST, l, 1, 0, 0, 0, 0, core, true);
-                w.spawnParticle(Particle.DUST, l.clone().add(r.nextDouble(-0.09, 0.09), r.nextDouble(-0.09, 0.09), r.nextDouble(-0.09, 0.09)),
+                if (r.nextBoolean()) w.spawnParticle(Particle.DUST, l.clone().add(r.nextDouble(-0.07, 0.07), r.nextDouble(-0.07, 0.07), r.nextDouble(-0.07, 0.07)),
                         1, 0, 0, 0, 0, edge, true);
             }
-            if (branches && i > 0 && r.nextInt(4) == 0) bolt(w, next, randomUnit().multiply(1.6), 3, jitter, false);
+            if (branches && i > 0 && r.nextInt(6) == 0) bolt(w, next, randomUnit().multiply(1.2), 2, jitter, false);
             cur = next;
         }
-        w.spawnParticle(Particle.ELECTRIC_SPARK, cur, 1, 0.05, 0.05, 0.05, 0.3, null, true);
     }
 
     /**
@@ -249,31 +245,36 @@ public final class BlackFlash extends Channel implements Listener {
         w.playSound(c, Sound.ENTITY_WARDEN_SONIC_BOOM, 1.2f, 1.1f);
         w.playSound(c, Sound.ITEM_TRIDENT_THUNDER, 1.4f, 0.8f);
         w.playSound(c, Sound.ENTITY_GENERIC_EXPLODE, 0.7f, 1.7f);
-        w.spawnParticle(Particle.EXPLOSION, c, 1, 0, 0, 0, 0, null, true);
-        w.spawnParticle(Particle.END_ROD, c, 24, 0.2, 0.2, 0.2, 0.5, null, true);
-        w.spawnParticle(Particle.SQUID_INK, c, 30, 0.4, 0.4, 0.4, 0.25, null, true);
-        for (int i = 0; i < 4; i++) { // shockwave rings
-            double rad = 0.8 + i * 0.7;
-            for (int k = 0; k < 30; k++) {
-                double a = Math.PI * 2 * k / 30;
-                w.spawnParticle(Particle.DUST, c.clone().add(Math.cos(a) * rad, 0, Math.sin(a) * rad), 1, 0, 0, 0, 0,
-                        new Particle.DustOptions(i % 2 == 0 ? CRIMSON : BLACK, 1.4f), true);
-            }
+        w.spawnParticle(Particle.END_ROD, c.clone().add(0, 0.9, 0), 2, 0.1, 0.1, 0.1, 0.2, null, true); // a small spark above the head, nothing on the body
+        // one thin ring at the feet, so the body stays visible
+        for (int k = 0; k < 16; k++) {
+            double a = Math.PI * 2 * k / 16;
+            w.spawnParticle(Particle.DUST, target.getLocation().add(Math.cos(a) * 1.1, 0.15, Math.sin(a) * 1.1), 1, 0, 0, 0, 0,
+                    new Particle.DustOptions(CRIMSON, 1.0f), true);
         }
 
         Vector towardsMe = me.toVector().subtract(c.toVector());
         double toMe = Math.min(12.0, towardsMe.length());
         Vector dirMe = towardsMe.lengthSquared() > 1e-4 ? towardsMe.normalize() : new Vector(0, 0, 1);
 
+        // Everything stays OFF the line between your eyes and them, so you can always see who you hit: one bolt
+        // arcs past them to the side, two more fly off away from you.
+        Vector sideways = dirMe.clone().crossProduct(new Vector(0, 1, 0));
+        if (sideways.lengthSquared() < 1e-4) sideways = new Vector(1, 0, 0);
+        final Vector side = sideways.normalize().multiply(ThreadLocalRandom.current().nextBoolean() ? 1 : -1);
         new BukkitRunnable() {
             int frame = 0;
 
             @Override public void run() {
-                if (frame >= 6) { cancel(); return; }
-                // three bolts run from the target straight at you, rolled again every frame
-                for (int i = 0; i < 3; i++) bolt(w, c, dirMe.clone().multiply(toMe).add(randomUnit().multiply(0.6)), 10, 0.22, true);
-                // the rest go everywhere: up, down, sideways
-                for (int i = 0; i < 9; i++) bolt(w, c, randomUnit().multiply(3.0 + ThreadLocalRandom.current().nextDouble(5.0)), 9, 0.25, true);
+                if (frame >= 3) { cancel(); return; }
+                Vector along = dirMe.clone().multiply(Math.max(0.5, Math.min(toMe - 1.5, 3.5))).add(randomUnit().multiply(0.3));
+                bolt(w, c.clone().add(side.clone().multiply(1.0)).add(dirMe.clone().multiply(0.4)), along, 6, 0.18, false);
+                for (int i = 0; i < 2; i++) {
+                    Vector out = randomUnit();
+                    int tries = 0;
+                    while (out.dot(dirMe) > 0.2 && tries++ < 8) out = randomUnit(); // never toward your camera
+                    bolt(w, c.clone().add(out.clone().multiply(1.0)), out.multiply(1.8 + ThreadLocalRandom.current().nextDouble(2.0)), 6, 0.2, false);
+                }
                 frame++;
             }
         }.runTaskTimer(LimboPlugin.get(), 0L, 1L);

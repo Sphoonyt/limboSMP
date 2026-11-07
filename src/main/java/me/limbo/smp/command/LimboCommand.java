@@ -18,6 +18,7 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabExecutor;
 import org.bukkit.entity.Player;
+import org.bukkit.Material;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -26,7 +27,7 @@ import java.util.List;
 public final class LimboCommand implements TabExecutor {
     private static final List<String> PLAYER_SUBS = List.of("darknessinfo", "trust", "claim", "cursed");
     private static final List<String> ADMIN_SUBS = List.of("set", "reset", "siphon", "unsiphon", "give",
-            "rift", "cooldown", "reload", "debug", "event", "unlock", "lock", "unlocks");
+            "rift", "cooldown", "reload", "debug", "event", "unlock", "lock", "unlocks", "reroll", "fx", "requiremod");
 
     private final LimboPlugin plugin;
     private final TrustCommand trustCmd;
@@ -60,10 +61,10 @@ public final class LimboCommand implements TabExecutor {
 
     private void help(CommandSender s) {
         Msg.send(s, "<white>/limbo darknessinfo <gray>- your darkness, passives, channels, siphon status");
-        Msg.send(s, "<white>/limbo cursed <gray>- today's cursed items, /limbo claim");
+        Msg.send(s, "<white>/limbo cursed <gray>- the current cursed item, /limbo claim");
         Msg.send(s, "<white>/trust <player> <gray>- stop your abilities from affecting a player (/limbo trust works too)");
         if (isAdmin(s)) {
-            Msg.send(s, "<gray>Admin: <white>set, reset, siphon, unsiphon, give, rift, cooldown, reload, debug, event, unlock, lock, unlocks");
+            Msg.send(s, "<gray>Admin: <white>set, reset, siphon, unsiphon, give, rift, cooldown, reload, debug, event, unlock, lock, unlocks, reroll, fx, requiremod");
         }
     }
 
@@ -121,16 +122,51 @@ public final class LimboCommand implements TabExecutor {
         if (!sub.isEmpty() && !sub.equals("list")) {
             if (!isAdmin(s)) { Msg.send(s, "<red>You don't have permission."); return; }
             switch (sub) {
-                case "roll" -> { c.roll(true); return; }
-                case "on" -> { c.setEnabled(true); Msg.send(s, "<gray>Cursed items <green>on"); return; }
-                case "off" -> { c.setEnabled(false); Msg.send(s, "<gray>Cursed items <red>off"); return; }
-                default -> { Msg.send(s, "<gray>/limbo cursed [list|roll|on|off]"); return; }
+                case "roll" -> {
+                    if (c.pool().isEmpty()) { Msg.send(s, "<red>The pool is empty. <gray>/limbo cursed pool add <item|hand>"); return; }
+                    c.roll(true);
+                    return;
+                }
+                case "set" -> {
+                    Material m = a.length > 2 ? Material.matchMaterial(a[2]) : null;
+                    if (m == null || c.setCurrent(m, true) == null) Msg.send(s, "<gray>/limbo cursed set <item>");
+                    return;
+                }
+                case "on" -> { c.setEnabled(true); Msg.send(s, "<gray>Cursed item <green>on"); return; }
+                case "off" -> { c.setEnabled(false); Msg.send(s, "<gray>Cursed item <red>off"); return; }
+                case "pool" -> { cursedPool(s, a); return; }
+                default -> { Msg.send(s, "<gray>/limbo cursed [list|roll|set <item>|pool <add|remove|list|clear>|on|off]"); return; }
             }
         }
-        if (!c.enabled()) { Msg.send(s, "<gray>Cursed items are not active."); return; }
-        Msg.send(s, "<#9b59ff>Cursed items: <white>" + Msg.esc(c.describe()) + " <gray>(change in <white>"
-                + TimeUtil.format(c.millisUntilRotation()) + "<gray>)");
-        Msg.send(s, "<gray>Hold one to use your first ability at double cooldown (no passives).");
+        if (!c.enabled()) { Msg.send(s, "<gray>The cursed item is not active."); return; }
+        long left = c.millisUntilRotation();
+        Msg.send(s, "<#9b59ff>Cursed item: <white>" + Msg.esc(c.describe())
+                + (left >= 0 ? " <gray>(changes in <white>" + TimeUtil.format(left) + "<gray>)" : ""));
+        Msg.send(s, "<gray>Hold it to use your first ability at double cooldown (no passives). It glows in your hotbar or offhand.");
+    }
+
+    private void cursedPool(CommandSender s, String[] a) {
+        var c = plugin.cursed();
+        String op = a.length > 2 ? a[2].toLowerCase() : "list";
+        switch (op) {
+            case "list" -> {
+                if (c.pool().isEmpty()) { Msg.send(s, "<gray>The cursed pool is empty."); return; }
+                StringBuilder sb = new StringBuilder();
+                for (Material m : c.pool()) sb.append(sb.length() > 0 ? "<dark_gray>, " : "").append(m == c.current() ? "<#9b59ff>" : "<white>").append(Msg.esc(me.limbo.smp.item.CursedItems.prettyName(m)));
+                Msg.send(s, "<gray>Pool (" + c.pool().size() + "): " + sb);
+            }
+            case "add", "remove" -> {
+                Material m = null;
+                if (a.length > 3) m = Material.matchMaterial(a[3]);
+                else if (s instanceof Player p && !p.getInventory().getItemInMainHand().getType().isAir()) m = p.getInventory().getItemInMainHand().getType();
+                if (m == null) { Msg.send(s, "<gray>/limbo cursed pool " + op + " <item>  (or hold the item)"); return; }
+                boolean ok = op.equals("add") ? c.addToPool(m) : c.removeFromPool(m);
+                Msg.send(s, ok ? "<gray>" + (op.equals("add") ? "Added <white>" : "Removed <white>") + Msg.esc(me.limbo.smp.item.CursedItems.prettyName(m))
+                        : "<red>" + (op.equals("add") ? "Already in the pool (or not an item)." : "Not in the pool."));
+            }
+            case "clear" -> { c.clearPool(); Msg.send(s, "<gray>Cleared the cursed pool."); }
+            default -> Msg.send(s, "<gray>/limbo cursed pool <add|remove|list|clear> [item]");
+        }
     }
 
     // ---------------- admin ----------------
@@ -201,6 +237,18 @@ public final class LimboCommand implements TabExecutor {
                 Msg.send(s, "<gray>Gave <white>" + amt + "x " + a[2].toLowerCase() + "<gray> to <white>" + Msg.esc(t.getName()));
             }
             case "rift" -> rift(s, a);
+            case "reroll" -> reroll(s, a);
+            case "fx" -> fx(s, a);
+            case "requiremod" -> {
+                if (a.length < 2) {
+                    Msg.send(s, "<gray>Mod required: " + (plugin.modGate().required() ? "<green>on" : "<red>off") + " <gray>(/limbo requiremod <on|off>)");
+                    return;
+                }
+                boolean on = a[1].equalsIgnoreCase("on") || a[1].equalsIgnoreCase("true");
+                plugin.modGate().setRequired(on);
+                Msg.send(s, "<gray>Limbo FX mod required: " + (on ? "<green>on <gray>(players without it are kicked after "
+                        + plugin.getConfig().getInt("mod.grace-seconds", 15) + "s, the resource pack is forced)" : "<red>off"));
+            }
             case "event" -> plugin.events().command(s, Arrays.copyOfRange(a, 1, a.length));
             case "unlock" -> plugin.unlocks().command(s, true, a);
             case "lock" -> plugin.unlocks().command(s, false, a);
@@ -224,6 +272,65 @@ public final class LimboCommand implements TabExecutor {
             }
             default -> help(s);
         }
+    }
+
+    /** /limbo reroll [player|all]: the slot machine, a fresh random darkness (siphon cleared). Defaults to yourself. */
+    private void reroll(CommandSender s, String[] a) {
+        java.util.List<Player> targets = new ArrayList<>();
+        if (a.length < 2) {
+            if (!(s instanceof Player p)) { Msg.send(s, "<gray>/limbo reroll <player|all>"); return; }
+            targets.add(p);
+        } else if (a[1].equalsIgnoreCase("all")) {
+            for (Player p : Bukkit.getOnlinePlayers()) if (p.getGameMode() != GameMode.SPECTATOR) targets.add(p);
+        } else {
+            Player t = online(s, a[1]); if (t == null) return;
+            targets.add(t);
+        }
+        for (Player t : targets) {
+            Darkness d = plugin.data().assignRandom(t.getUniqueId());
+            plugin.data().clearSiphon(t.getUniqueId());
+            plugin.data().saveIfDirty();
+            plugin.items().syncTotems(t);
+            if (d == null) continue;
+            me.limbo.smp.event.DarknessRoll.play(plugin, t, d, 5, () ->
+                    Msg.send(t, "<gray>Your darkness is now <white>" + d.displayName()));
+        }
+        Msg.send(s, "<gray>Rerolled <white>" + targets.size() + "<gray> player" + (targets.size() == 1 ? "" : "s") + ".");
+    }
+
+    /** /limbo fx <test <effect> [player] | clear [player] | mode [shader|bossbar|both|off] | list> */
+    private void fx(CommandSender s, String[] a) {
+        var sfx = plugin.screenFx();
+        String op = a.length > 1 ? a[1].toLowerCase() : "";
+        switch (op) {
+            case "mode" -> {
+                if (a.length < 3) { Msg.send(s, "<gray>Status display: <white>" + sfx.mode() + " <gray>(shader|bossbar|both|off)"); return; }
+                String m = a[2].toLowerCase();
+                if (!List.of("shader", "bossbar", "both", "off").contains(m)) { Msg.send(s, "<red>shader, bossbar, both or off."); return; }
+                sfx.setMode(m);
+                Msg.send(s, "<gray>Status display is now <white>" + m);
+            }
+            case "test" -> {
+                var f = a.length > 2 ? me.limbo.smp.status.ScreenFx.Fx.byName(a[2]) : null;
+                Player t = a.length > 3 ? online(s, a[3]) : (s instanceof Player p ? p : null);
+                if (f == null || t == null) { Msg.send(s, "<gray>/limbo fx test <effect> [player]  (effects: " + fxNames() + ")"); return; }
+                sfx.show(t, f, 100);
+                Msg.send(s, "<gray>Showing <white>" + f.name().toLowerCase() + "<gray> to <white>" + Msg.esc(t.getName()) + "<gray> for 5s.");
+            }
+            case "clear" -> {
+                Player t = a.length > 2 ? online(s, a[2]) : (s instanceof Player p ? p : null);
+                if (t == null) return;
+                sfx.clearAll(t);
+                Msg.send(s, "<gray>Cleared the screen effects of <white>" + Msg.esc(t.getName()));
+            }
+            default -> Msg.send(s, "<gray>/limbo fx <test <effect> [player] | clear [player] | mode [shader|bossbar|both|off]>  effects: " + fxNames());
+        }
+    }
+
+    private static String fxNames() {
+        StringBuilder sb = new StringBuilder();
+        for (var f : me.limbo.smp.status.ScreenFx.Fx.values()) sb.append(sb.length() > 0 ? ", " : "").append(f.name().toLowerCase());
+        return sb.toString();
     }
 
     private void rift(CommandSender s, String[] a) {
@@ -308,16 +415,25 @@ public final class LimboCommand implements TabExecutor {
             if (a.length == 2) {
                 switch (sub) {
                     case "set", "reset", "siphon", "unsiphon", "give" -> Bukkit.getOnlinePlayers().forEach(p -> out.add(p.getName()));
+                    case "reroll" -> { out.add("all"); Bukkit.getOnlinePlayers().forEach(p -> out.add(p.getName())); }
+                    case "fx" -> out.addAll(List.of("test", "clear", "mode"));
+                    case "requiremod" -> out.addAll(List.of("on", "off"));
                     case "rift" -> out.addAll(List.of("create", "remove", "list", "spawn", "interval", "count", "info"));
                     case "cooldown" -> out.add("reset");
                     case "event" -> out.addAll(List.of("start", "stop", "end", "status", "deity"));
                     case "unlock", "lock" -> out.addAll(List.of("nether", "villagers", "rifts", "enchants"));
-                    case "cursed" -> out.addAll(List.of("list", "roll", "on", "off"));
+                    case "cursed" -> out.addAll(List.of("list", "roll", "set", "pool", "on", "off"));
                     default -> {}
                 }
             } else if (a.length == 3) {
                 switch (sub) {
                     case "set" -> out.addAll(plugin.registry().ids());
+                    case "fx" -> {
+                        if (a[1].equalsIgnoreCase("test")) for (var f : me.limbo.smp.status.ScreenFx.Fx.values()) out.add(f.name().toLowerCase());
+                        else if (a[1].equalsIgnoreCase("mode")) out.addAll(List.of("shader", "bossbar", "both", "off"));
+                        else Bukkit.getOnlinePlayers().forEach(p -> out.add(p.getName()));
+                    }
+                    case "cursed" -> { if (a[1].equalsIgnoreCase("pool")) out.addAll(List.of("add", "remove", "list", "clear")); }
                     case "give" -> out.addAll(List.of("totem", "lantern", "core"));
                     case "cooldown" -> Bukkit.getOnlinePlayers().forEach(p -> out.add(p.getName()));
                     case "event" -> {

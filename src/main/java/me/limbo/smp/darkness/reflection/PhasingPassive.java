@@ -35,6 +35,5 @@ public final class PhasingPassive implements Passive, Listener {
         e.setCancelled(true);
         ParticleUtil.blissDust(p.getLocation().add(0, 1, 0), ReflectionDarkness.COLOR, 18, 0.45);
         me.limbo.smp.util.Sfx.play(p.getLocation(), org.bukkit.Sound.ENTITY_ENDERMAN_TELEPORT, 0.4f, 1.8f, me.limbo.smp.util.Sfx.Theme.REFLECTION);
-        p.sendActionBar(Msg.parse("<#a5cdff>Phased"));
     }
 }

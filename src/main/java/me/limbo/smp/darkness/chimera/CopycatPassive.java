@@ -67,7 +67,6 @@ public final class CopycatPassive implements Passive, Listener {
         copied.onActivate(p);
         ParticleUtil.burst(p.getLocation().add(0, 1, 0), theirs.color(), 24);
         Sfx.play(p.getLocation(), Sound.ENTITY_ALLAY_ITEM_GIVEN, 0.8f, 1.2f, Sfx.Theme.CHIMERA);
-        p.sendActionBar(Msg.parse("<#46be5a>Copycat <gray>- <white>" + Msg.esc(copied.name()) + " <gray>for 30s"));
     }
 
     @Override
@@ -84,6 +83,5 @@ public final class CopycatPassive implements Passive, Listener {
         Copy c = COPIES.remove(p.getUniqueId());
         if (c == null) return;
         c.passive().onDeactivate(p);
-        if (notify && p.isOnline()) p.sendActionBar(Msg.parse("<#46be5a>Copycat <gray>- <white>" + Msg.esc(c.passive().name()) + " <gray>faded"));
     }
 }

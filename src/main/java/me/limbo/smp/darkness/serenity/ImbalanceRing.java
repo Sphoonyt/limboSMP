@@ -51,7 +51,6 @@ public final class ImbalanceRing extends Channel {
         c.runTaskTimer(LimboPlugin.get(), 0L, 2L);
         me.limbo.smp.util.Sfx.play(p.getLocation(), org.bukkit.Sound.BLOCK_AMETHYST_BLOCK_CHIME, 1f, 0.6f, me.limbo.smp.util.Sfx.Theme.SERENITY);
         me.limbo.smp.util.Sfx.add(p.getLocation(), org.bukkit.Sound.BLOCK_RESPAWN_ANCHOR_CHARGE, 0.8f, 1.4f);
-        p.sendActionBar(Msg.parse("<#ffafcd>Imbalance Ring"));
         return true;
     }
 

@@ -113,11 +113,10 @@ public final class Enchain extends Channel implements Listener {
         tethers.put(caster.getUniqueId(), t);
 
         applyEffects(target, TETHER_TICKS);
+        LimboPlugin.get().screenFx().show(target, me.limbo.smp.status.ScreenFx.Fx.ENCHAIN, TETHER_TICKS);
         Feedback.affected(target, NAME, caster);
         ParticleUtil.burst(target.getLocation().add(0, 1, 0), EntropyDarkness.COLOR, 24);
         me.limbo.smp.util.Sfx.play(target.getLocation(), org.bukkit.Sound.ITEM_SHIELD_BREAK, 1f, 0.6f, me.limbo.smp.util.Sfx.Theme.ENTROPY);
-        caster.sendActionBar(Msg.parse("<#961428>Enchained"));
-        if (target instanceof Player tp) tp.sendActionBar(Msg.parse("<dark_red>You are chained to " + Msg.esc(caster.getName())));
 
         t.task = new BukkitRunnable() {
             @Override public void run() {
@@ -162,8 +161,9 @@ public final class Enchain extends Channel implements Listener {
         if (t == null) return;
         if (t.task != null) t.task.cancel();
         if (t.chain != null) t.chain.clear();
+        Player victim = Bukkit.getPlayer(t.target);
+        if (victim != null) LimboPlugin.get().screenFx().clear(victim, me.limbo.smp.status.ScreenFx.Fx.ENCHAIN);
         Player c = Bukkit.getPlayer(casterId);
-        if (c != null && c.isOnline()) c.sendActionBar(Msg.parse("<gray>The chain breaks."));
     }
 
     @Override

@@ -48,7 +48,6 @@ public final class Evolution extends Channel implements Listener {
 
     private static final class Evolved {
         BukkitTask task;
-        BossBar bar;
     }
 
     private final NamespacedKey reachKey;
@@ -74,8 +73,7 @@ public final class Evolution extends Channel implements Listener {
         p.addPotionEffect(new PotionEffect(PotionEffectType.HASTE, DURATION_TICKS + 10, 1, false, false, true));
 
         Evolved ev = new Evolved();
-        ev.bar = BossBar.bossBar(Msg.parse("<#46be5a>Evolved"), 1f, BossBar.Color.GREEN, BossBar.Overlay.PROGRESS);
-        p.showBossBar(ev.bar);
+        LimboPlugin.get().screenFx().show(p, me.limbo.smp.status.ScreenFx.Fx.EVOLUTION, DURATION_TICKS);
         ACTIVE.put(p.getUniqueId(), ev);
 
         transformBurst(p);
@@ -85,11 +83,6 @@ public final class Evolution extends Channel implements Listener {
             @Override public void run() {
                 if (!p.isOnline() || p.isDead() || t >= DURATION_TICKS) { end(p, t >= DURATION_TICKS); return; }
                 aura(p, t);
-                if (t % 10 == 0) {
-                    int left = (DURATION_TICKS - t + 19) / 20;
-                    ev.bar.name(Msg.parse("<#46be5a>Evolved <gray>- <white>" + left + "s"));
-                    ev.bar.progress(Math.max(0f, 1f - t / (float) DURATION_TICKS));
-                }
                 t += 2;
             }
         }.runTaskTimer(LimboPlugin.get(), 0L, 2L);
@@ -113,7 +106,7 @@ public final class Evolution extends Channel implements Listener {
         Evolved ev = ACTIVE.remove(p.getUniqueId());
         if (ev == null) return;
         if (ev.task != null) ev.task.cancel();
-        if (ev.bar != null) p.hideBossBar(ev.bar);
+        LimboPlugin.get().screenFx().clear(p, me.limbo.smp.status.ScreenFx.Fx.EVOLUTION);
         removeModifier(p, Attribute.ENTITY_INTERACTION_RANGE, reachKey);
         removeModifier(p, Attribute.KNOCKBACK_RESISTANCE, kbKey);
         PotionEffect haste = p.getPotionEffect(PotionEffectType.HASTE);

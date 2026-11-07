@@ -81,6 +81,5 @@ public final class ComboPassive implements Passive, Listener {
         p.addPotionEffect(new PotionEffect(PotionEffectType.HASTE, HASTE_TICKS, HASTE_AMPLIFIER, false, true, true));
         ParticleUtil.blissDust(p.getLocation().add(0, 1, 0), InertiaDarkness.DARK, InertiaDarkness.LIGHT, 20, 0.5);
         p.playSound(p.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 0.6f, 1.8f);
-        p.sendActionBar(Msg.parse("<#40e0d0>Combo!"));
     }
 }

@@ -55,7 +55,6 @@ public final class DroughtCompression extends Channel {
         World w = p.getWorld();
         me.limbo.smp.util.Sfx.play(p.getLocation(), org.bukkit.Sound.BLOCK_FIRE_EXTINGUISH, 1f, 0.6f, me.limbo.smp.util.Sfx.Theme.IGNITION);
         me.limbo.smp.util.Sfx.add(p.getLocation(), org.bukkit.Sound.ENTITY_BLAZE_SHOOT, 1f, 0.5f);
-        p.sendActionBar(Msg.parse("<#ff6e14>Drought Compression"));
         return true;
     }
 
@@ -145,7 +144,6 @@ public final class DroughtCompression extends Channel {
                 t.setFoodLevel(Math.max(0, t.getFoodLevel() - loss));
                 Feedback.affected(t, "Drought Compression", p);
                 ParticleUtil.blissDust(t.getLocation().add(0, 1, 0), IgnitionDarkness.COLOR, 8, 0.4);
-                t.sendActionBar(Msg.parse("<#ff6e14>Parched..."));
             }
         }
 

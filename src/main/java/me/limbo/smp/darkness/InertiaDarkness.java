@@ -4,7 +4,7 @@ import me.limbo.smp.darkness.inertia.ComboPassive;
 import me.limbo.smp.darkness.inertia.KineticThief;
 import me.limbo.smp.darkness.inertia.Propel;
 import me.limbo.smp.darkness.inertia.QuickChargesPassive;
-import me.limbo.smp.darkness.inertia.UnstoppableForceFlux;
+import me.limbo.smp.darkness.inertia.SpeedPassive;
 import org.bukkit.Color;
 
 /** Inertia - speed, resistance to change, immovability. Teal (light and dark). */
@@ -18,9 +18,9 @@ public final class InertiaDarkness extends Darkness {
 
     public InertiaDarkness() {
         super(ID, "Inertia", "Speed, resistance to change, immovability.", COLOR);
-        addPassive(new QuickChargesPassive());
+        addPassive(new SpeedPassive());
         addPassive(new ComboPassive());
-        setFluxPassive(new UnstoppableForceFlux());
+        setFluxPassive(new QuickChargesPassive()); // flux: totem held
         addChannel(new Propel());     // R
         addChannel(new KineticThief()); // L
     }

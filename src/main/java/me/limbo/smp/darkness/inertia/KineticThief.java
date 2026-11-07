@@ -62,7 +62,6 @@ public final class KineticThief extends Channel {
 
         me.limbo.smp.util.Sfx.play(eye, org.bukkit.Sound.ENTITY_WARDEN_SONIC_CHARGE, 0.8f, 1.6f, me.limbo.smp.util.Sfx.Theme.INERTIA);
         me.limbo.smp.util.Sfx.add(eye, org.bukkit.Sound.ENTITY_PLAYER_ATTACK_KNOCKBACK, 1f, 0.5f);
-        p.sendActionBar(Msg.parse("<#40e0d0>Kinetic Thief"));
 
         new BukkitRunnable() {
             double travelled = 0;
@@ -95,6 +94,9 @@ public final class KineticThief extends Channel {
         TrueDamage.apply(p, e, DAMAGE);
         if (e.isDead()) return;
         LimboPlugin.get().status().stun(e, STUN_TICKS);
+        // one look for stun and slow; the slow covers less of the screen and takes over when the stun ends
+        LimboPlugin.get().screenFx().show(e, me.limbo.smp.status.ScreenFx.Fx.KINETIC_STUN, STUN_TICKS);
+        LimboPlugin.get().screenFx().show(e, me.limbo.smp.status.ScreenFx.Fx.KINETIC_SLOW, SLOW_TICKS);
         e.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, SLOW_TICKS, SLOW_AMPLIFIER, false, true, true));
         Feedback.affected(e, NAME, p);
         ParticleUtil.burst(e.getLocation().add(0, 1, 0), InertiaDarkness.LIGHT, 18);
@@ -108,7 +110,6 @@ public final class KineticThief extends Channel {
         PotionEffect cur = p.getPotionEffect(PotionEffectType.SPEED);
         if (cur != null && cur.getAmplifier() >= SPEED_AMPLIFIER && cur.getDuration() > 0) duration += cur.getDuration();
         p.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, duration, SPEED_AMPLIFIER, false, true, true));
-        p.sendActionBar(Msg.parse("<#40e0d0>Speed III <gray>" + (duration / 20) + "s"));
     }
 
     /** A curved wave front, tips trailing back, in light and dark teal. */

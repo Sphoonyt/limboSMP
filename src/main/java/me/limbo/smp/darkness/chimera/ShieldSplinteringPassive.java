@@ -66,7 +66,6 @@ public final class ShieldSplinteringPassive implements Passive, Listener {
             s.crackedAt = now;
             v.getWorld().spawnParticle(Particle.CRIT, at, 8, 0.25, 0.25, 0.25, 0.1);
             v.getWorld().playSound(at, Sound.BLOCK_ANVIL_PLACE, 0.5f, 1.6f);
-            p.sendActionBar(Msg.parse("<#46be5a>Shield cracked"));
             return;
         }
         if (now - s.crackedAt < DELAY_MS) return; // too soon, it stays cracked
@@ -77,7 +76,5 @@ public final class ShieldSplinteringPassive implements Passive, Listener {
         v.getWorld().spawnParticle(Particle.ITEM, at, 24, 0.3, 0.3, 0.3, 0.12,
                 new org.bukkit.inventory.ItemStack(Material.OAK_PLANKS));
         Sfx.play(at, Sound.ITEM_SHIELD_BREAK, 1f, 0.9f, Sfx.Theme.CHIMERA);
-        p.sendActionBar(Msg.parse("<#46be5a>Shield splintered"));
-        v.sendActionBar(Msg.parse("<#46be5a>Your shield was splintered"));
     }
 }

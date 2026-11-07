@@ -59,6 +59,7 @@ public final class TemporalRepose extends Channel implements Listener {
         LimboPlugin pl = LimboPlugin.get();
         final int durationTicks = (int) (pl.getConfig().getDouble("temporal-repose.duration-seconds", 6.0) * 20);
         pl.status().slowTime(t, durationTicks);
+        pl.screenFx().show(t, me.limbo.smp.status.ScreenFx.Fx.REPOSE, durationTicks);
         slows.put(t.getUniqueId(), new Slow(ctx.player().getUniqueId(), System.currentTimeMillis() + durationTicks * 50L));
         Feedback.affected(t, "Temporal Repose", ctx.player());
         UUID id = t.getUniqueId();
@@ -66,8 +67,6 @@ public final class TemporalRepose extends Channel implements Listener {
         me.limbo.smp.util.Sfx.play(t.getLocation(), org.bukkit.Sound.BLOCK_AMETHYST_BLOCK_CHIME, 1f, 0.5f, me.limbo.smp.util.Sfx.Theme.SERENITY);
         me.limbo.smp.util.Sfx.add(t.getLocation(), org.bukkit.Sound.ENTITY_ALLAY_AMBIENT_WITHOUT_ITEM, 1f, 0.6f);
         ParticleUtil.burst(t.getLocation().add(0, 1, 0), SerenityDarkness.COLOR, 24);
-        if (t instanceof Player victim) victim.sendActionBar(Msg.parse("<#ffafcd>Your time slows..."));
-        ctx.player().sendActionBar(Msg.parse("<#ffafcd>Temporal Repose"));
 
         final org.bukkit.entity.ItemDisplay halo = me.limbo.smp.util.FlatFx.spawn(t.getLocation().add(0, t.getHeight() + 0.4, 0),
                 me.limbo.smp.util.FlatFx.HALO, org.bukkit.entity.Display.Billboard.VERTICAL);

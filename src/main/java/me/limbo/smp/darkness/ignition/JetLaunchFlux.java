@@ -68,7 +68,6 @@ public final class JetLaunchFlux implements FluxPassive, Listener {
 
         long left = pl.dispatcher().cooldowns().remaining(id, CD_KEY);
         if (left > 0) {
-            p.sendActionBar(Msg.parse("<gray>Jet Launch <dark_gray>- <red>" + TimeUtil.seconds(left)));
             return;
         }
         launch(p);

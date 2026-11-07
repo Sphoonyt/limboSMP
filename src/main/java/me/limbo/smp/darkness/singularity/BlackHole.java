@@ -64,7 +64,6 @@ public final class BlackHole extends Channel {
         c.runTaskTimer(LimboPlugin.get(), 0L, 1L);
         World w = ctx.player().getWorld();
         me.limbo.smp.util.Sfx.play(ctx.player().getLocation(), org.bukkit.Sound.ENTITY_WITHER_SHOOT, 1f, 0.4f, me.limbo.smp.util.Sfx.Theme.SINGULARITY);
-        ctx.player().sendActionBar(Msg.parse("<#9646e6>Black Hole"));
         return true;
     }
 
@@ -141,6 +140,7 @@ public final class BlackHole extends Channel {
                     TrueDamage.apply(p, e, DETONATION_DAMAGE);
                     e.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, EFFECT_TICKS, 2, false, true, true));
                     e.addPotionEffect(new PotionEffect(PotionEffectType.DARKNESS, EFFECT_TICKS, 0, false, true, true));
+                    LimboPlugin.get().screenFx().show(e, me.limbo.smp.status.ScreenFx.Fx.BLACK_HOLE, EFFECT_TICKS);
                 }
                 if (expandTicks >= EXPAND_TICKS) finish();
             }

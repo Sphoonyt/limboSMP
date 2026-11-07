@@ -52,7 +52,6 @@ public final class SilencingMaw extends Channel {
         Player p = ctx.player();
         Location target = findTarget(p);
         if (target == null) {
-            p.sendActionBar(Msg.parse("<red>No ground in range"));
             return false;
         }
         World w = target.getWorld();
@@ -197,7 +196,7 @@ public final class SilencingMaw extends Channel {
             Feedback.affected(e, NAME, p);
             if (e instanceof Player v) {
                 pl.status().silence(v, SILENCE_TICKS);
-                v.sendActionBar(Msg.parse("<#46be5a>Your darkness was silenced <gray>(8s)"));
+                pl.screenFx().show(v, me.limbo.smp.status.ScreenFx.Fx.SILENCE, SILENCE_TICKS);
             }
             w.spawnParticle(Particle.DUST_COLOR_TRANSITION, e.getLocation().add(0, 1, 0), 24, 0.4, 0.7, 0.4, 0,
                     new Particle.DustTransition(BRIGHT, ChimeraDarkness.COLOR, 1.5f), true);

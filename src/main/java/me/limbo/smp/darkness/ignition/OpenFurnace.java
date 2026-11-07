@@ -56,6 +56,8 @@ public final class OpenFurnace extends Channel implements Listener {
     private static final long MARK_MS = 10_000L;      // how long a scorch mark waits to be hit
     private static final double SLASH_DAMAGE = 2.0;   // 1 heart per slash
     private static final int DISABLE_TICKS = 60;      // shield + cobwebs off for 3s
+    private static final int SLASH_1_DELAY = 10;      // ticks after your hit until the first slash (was 3)
+    private static final int SLASH_2_DELAY = 18;      // and the second (was 6)
 
     private final Set<UUID> charging = new HashSet<>();
     private final Map<UUID, Long> marks = new HashMap<>();       // marked enemy -> expiry
@@ -76,7 +78,6 @@ public final class OpenFurnace extends Channel implements Listener {
         p.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, CHARGE_TICKS + 4, 2, false, true, true));
         pl.status().ground(p, CHARGE_TICKS + 2); // can't jump while charging
         me.limbo.smp.util.Sfx.play(p.getLocation(), org.bukkit.Sound.BLOCK_FIRE_AMBIENT, 1.2f, 0.6f, me.limbo.smp.util.Sfx.Theme.IGNITION);
-        p.sendActionBar(Msg.parse("<#ff6e14>Charging..."));
         ensureMarkTask();
 
         new BukkitRunnable() {
@@ -125,7 +126,6 @@ public final class OpenFurnace extends Channel implements Listener {
         Location pos = eye.clone().add(dir.clone().multiply(1.0));
         me.limbo.smp.util.Sfx.play(eye, org.bukkit.Sound.ENTITY_BLAZE_SHOOT, 1.2f, 0.7f, me.limbo.smp.util.Sfx.Theme.IGNITION);
         me.limbo.smp.util.Sfx.add(eye, org.bukkit.Sound.ITEM_FIRECHARGE_USE, 1.2f, 0.8f);
-        p.sendActionBar(Msg.parse("<#ff6e14>Open Furnace"));
 
         Set<UUID> hit = new HashSet<>();
         Predicate<Entity> filter = e -> e instanceof LivingEntity le && !e.equals(p) && !hit.contains(e.getUniqueId())
@@ -184,7 +184,6 @@ public final class OpenFurnace extends Channel implements Listener {
         Feedback.affected(target, NAME, p);
         ParticleUtil.burst(target.getLocation().add(0, 1, 0), IgnitionDarkness.COLOR, 20);
         me.limbo.smp.util.Sfx.play(target.getLocation(), org.bukkit.Sound.ENTITY_BLAZE_HURT, 1f, 0.8f, me.limbo.smp.util.Sfx.Theme.IGNITION);
-        if (target instanceof Player tp) tp.sendActionBar(Msg.parse("<#ff6e14>Scorched"));
     }
 
     // ------------------------------------------------------------ scorch mark
@@ -223,8 +222,8 @@ public final class OpenFurnace extends Channel implements Listener {
             vp.setCooldown(Material.SHIELD, DISABLE_TICKS);   // can't block
             vp.setCooldown(Material.COBWEB, DISABLE_TICKS);   // can't place webs
         }
-        Bukkit.getScheduler().runTaskLater(pl(), () -> slash(p, v, 0), 3L);
-        Bukkit.getScheduler().runTaskLater(pl(), () -> slash(p, v, 1), 6L);
+        Bukkit.getScheduler().runTaskLater(pl(), () -> slash(p, v, 0), SLASH_1_DELAY);
+        Bukkit.getScheduler().runTaskLater(pl(), () -> slash(p, v, 1), SLASH_2_DELAY);
     }
 
     /** One diagonal slash of fire across the target (the two slashes form an X). */

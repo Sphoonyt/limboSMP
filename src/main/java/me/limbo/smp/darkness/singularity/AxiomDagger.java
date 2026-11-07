@@ -105,13 +105,11 @@ public final class AxiomDagger extends Channel {
             soonest = Math.min(soonest, slots[i]);
         }
         if (use < 0) {
-            p.sendActionBar(Msg.parse("<gray>Axiom Dagger <dark_gray>- <red>" + TimeUtil.seconds(soonest - now)));
             return false;
         }
         slots[use] = now + (ctx.cursed() ? RECHARGE_MS * 2 : RECHARGE_MS); // cursed item: double cooldown
         int left = 0;
         for (long s : slots) if (s <= now) left++;
-        p.sendActionBar(Msg.parse("<#9646e6>Axiom Dagger <gray>" + left + "/" + CHARGES));
 
         launch(p);
         return true;
@@ -206,8 +204,8 @@ public final class AxiomDagger extends Channel {
         me.limbo.smp.util.Sfx.play(at, org.bukkit.Sound.ENTITY_PLAYER_ATTACK_CRIT, 1f, 1.4f, me.limbo.smp.util.Sfx.Theme.SINGULARITY);
         if (target.isDead()) return;
         LimboPlugin.get().status().ground(target, GROUND_TICKS);
+        LimboPlugin.get().screenFx().show(target, me.limbo.smp.status.ScreenFx.Fx.AXIOM_GROUND, GROUND_TICKS);
         if (target instanceof Player victim) {
-            victim.sendActionBar(Msg.parse("<#9646e6>Grounded <gray>- no jumping or wind charges (4s)"));
         }
     }
 }

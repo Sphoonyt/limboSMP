@@ -60,10 +60,10 @@ public final class SpinecutterFlux implements FluxPassive, Listener {
             TrueDamage.apply(p, v, DAMAGE);
             if (v.isDead()) return;
             pl.status().stun(v, STUN_TICKS);
+            pl.screenFx().show(v, me.limbo.smp.status.ScreenFx.Fx.SPINECUTTER, STUN_TICKS);
             Location l = v.getLocation().add(0, v.getHeight() * 0.6, 0);
             ParticleUtil.burst(l, EntropyDarkness.COLOR, 24);
             l.getWorld().playSound(l, Sound.ENTITY_WITHER_HURT, 0.6f, 1.6f);
-            p.sendActionBar(Msg.parse("<#961428>Spinecutter"));
         }, DELAY_TICKS);
     }
 

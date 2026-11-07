@@ -272,7 +272,8 @@ public final class ServerStartEvent implements Listener {
         revealed = true;
         phase = Phase.REVEAL;
 
-        List<Material> items = plugin.cursed().roll(false); // the start's cursed items
+        Material rolled = plugin.cursed().roll(false); // the start's cursed item (null if the admin pool is empty)
+        List<Material> items = rolled == null ? List.of() : List.of(rolled);
         events.deity().say("...", 20);
         int spoke = events.deity().sayAll(lines("cursed"), lineTicks());
         broadcastCursed(items);
@@ -280,14 +281,14 @@ public final class ServerStartEvent implements Listener {
     }
 
     private void broadcastCursed(List<Material> items) {
-        Bukkit.broadcast(Msg.parse(Msg.PREFIX + "<#9b59ff>The cursed items have been revealed:"));
-        for (Material m : items) Bukkit.broadcast(Msg.parse("<dark_gray>  - <white>" + Msg.esc(me.limbo.smp.item.CursedItems.prettyName(m))));
-        Bukkit.broadcast(Msg.parse("<gray>Hold one to use your first ability, at double cooldown."));
+        if (items.isEmpty()) { Bukkit.broadcast(Msg.parse(Msg.PREFIX + "<#9b59ff>No cursed item has been chosen.")); return; }
+        Bukkit.broadcast(Msg.parse(Msg.PREFIX + "<#9b59ff>The cursed item has been revealed: <white>" + Msg.esc(me.limbo.smp.item.CursedItems.prettyName(items.get(0)))));
+        Bukkit.broadcast(Msg.parse("<gray>Hold it to use your first ability, at double cooldown."));
     }
 
     private void sendCursedTo(Player p) {
-        Msg.send(p, "<#9b59ff>The cursed items are: <white>" + Msg.esc(plugin.cursed().describe()));
-        Msg.send(p, "<gray>Hold one to use your first ability, at double cooldown.");
+        Msg.send(p, "<#9b59ff>The cursed item is: <white>" + Msg.esc(plugin.cursed().describe()));
+        Msg.send(p, "<gray>Hold it to use your first ability, at double cooldown.");
     }
 
     // ------------------------------------------------------------ 4. the Big Rift

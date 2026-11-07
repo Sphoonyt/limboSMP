@@ -21,7 +21,7 @@ public final class PlayerListener implements Listener {
             if (sha1 == null || sha1.isBlank()) {
                 plugin.getLogger().warning("resource-pack.url is set but resource-pack.sha1 is empty, not sending the pack.");
             } else {
-                e.getPlayer().setResourcePack(url, sha1.trim().toLowerCase(), plugin.getConfig().getBoolean("resource-pack.required", false));
+                e.getPlayer().setResourcePack(url, sha1.trim().toLowerCase(), plugin.getConfig().getBoolean("resource-pack.required", false) || plugin.modGate().required());
             }
         }
         if (plugin.data().assignIfMissing(e.getPlayer())) {

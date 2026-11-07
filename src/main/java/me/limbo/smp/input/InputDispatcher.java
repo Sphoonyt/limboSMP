@@ -42,8 +42,8 @@ public final class InputDispatcher {
         if (d == null) return;
 
         if (plugin.isDebug(id)) {
-            p.sendActionBar(Msg.parse("<dark_gray>[debug] <gray>input <white>" + input.shortName()
-                    + (offhand ? " <gray>(offhand)" : "")));
+            Msg.send(p, "<dark_gray>[debug] <gray>input <white>" + input.shortName()
+                    + (offhand ? " <gray>(offhand)" : ""));
         }
 
         long siphonLeft = plugin.data().siphonRemaining(id);
@@ -51,15 +51,12 @@ public final class InputDispatcher {
             long now = System.currentTimeMillis();
             if (now - lastSiphonNotice > 500) {
                 lastSiphonNotice = now;
-                p.sendActionBar(Msg.parse("<dark_red>Your darkness is siphoned <gray>(" + TimeUtil.format(siphonLeft) + ")"));
             }
             return;
         }
 
         long silenced = plugin.status().silenceRemaining(id);
         if (silenced > 0) {
-            p.sendActionBar(Msg.parse("<#46be5a>Silenced <gray>- <red>" + TimeUtil.seconds(silenced)));
-            plugin.cooldownHud().quiet(p, 20);
             return;
         }
 
@@ -74,8 +71,6 @@ public final class InputDispatcher {
         String key = d.id() + ":" + c.id();
         long left = c.usesCustomCooldown() ? 0 : cooldowns.remaining(id, key);
         if (left > 0) {
-            p.sendActionBar(Msg.parse("<gray>" + Msg.esc(c.name()) + " <dark_gray>- <red>" + TimeUtil.seconds(left)));
-            plugin.cooldownHud().quiet(p, 20);
             return;
         }
 
@@ -85,7 +80,6 @@ public final class InputDispatcher {
             if (c.execute(ctx)) {
                 if (!c.usesCustomCooldown()) cooldowns.set(id, key, cursed ? c.cooldownMillis() * 2 : c.cooldownMillis());
                 Feedback.activated(p, c.name());
-                plugin.cooldownHud().quiet(p, 30);
                 me.limbo.smp.util.CastFx.sigil(p, d.color());
                 plugin.fatigue().record(p, d, c);
             }

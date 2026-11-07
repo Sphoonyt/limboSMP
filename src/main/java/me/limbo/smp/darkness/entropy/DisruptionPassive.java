@@ -49,6 +49,5 @@ public final class DisruptionPassive implements Passive, Listener {
 
         ParticleUtil.burst(v.getLocation().add(0, 1, 0), EntropyDarkness.COLOR, 20);
         v.playSound(v.getLocation(), Sound.ENTITY_ENDERMAN_TELEPORT, 0.8f, 0.6f);
-        v.sendActionBar(Msg.parse("<dark_red>Your hotbar was scrambled!"));
     }
 }

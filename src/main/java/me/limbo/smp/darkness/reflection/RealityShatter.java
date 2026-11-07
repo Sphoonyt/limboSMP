@@ -110,7 +110,6 @@ public final class RealityShatter extends Channel implements Listener {
                 ticks += 2;
                 if (!p.isOnline() || p.isDead() || ticks > DURATION_TICKS) {
                     end(id);
-                    if (p.isOnline()) p.sendActionBar(Msg.parse("<gray>Reality mends itself."));
                     return;
                 }
                 draw(p, ticks);
@@ -120,7 +119,6 @@ public final class RealityShatter extends Channel implements Listener {
         active.put(id, t);
         me.limbo.smp.util.Sfx.play(p.getLocation(), org.bukkit.Sound.BLOCK_GLASS_BREAK, 1.2f, 0.6f, me.limbo.smp.util.Sfx.Theme.REFLECTION);
         me.limbo.smp.util.Sfx.add(p.getLocation(), org.bukkit.Sound.BLOCK_AMETHYST_BLOCK_BREAK, 1f, 0.5f);
-        p.sendActionBar(Msg.parse("<#a5cdff>Reality Shatter"));
         return true;
     }
 

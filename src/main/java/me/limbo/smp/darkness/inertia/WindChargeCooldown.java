@@ -13,7 +13,7 @@ import org.bukkit.event.entity.ProjectileLaunchEvent;
 
 /**
  * The server-wide wind charge cooldown: after a player throws a wind charge they can't throw another for
- * wind-charge.cooldown-seconds (config.yml, 0 = vanilla). Inertia's Quick Charges passive halves it, using whole
+ * wind-charge.cooldown-seconds (config.yml, 0 = vanilla). Inertia's Quick Charges flux passive halves it, using whole
  * seconds rounded down (5s -> 2s).
  */
 public final class WindChargeCooldown implements Listener {
@@ -24,7 +24,7 @@ public final class WindChargeCooldown implements Listener {
     /** Cooldown in whole seconds for this player. */
     public int seconds(Player p) {
         int base = Math.max(0, plugin.getConfig().getInt("wind-charge.cooldown-seconds", 5));
-        return plugin.passivesActive(p, InertiaDarkness.ID) ? base / 2 : base;
+        return plugin.fluxActive(p, InertiaDarkness.ID) ? base / 2 : base; // Quick Charges is the flux passive
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
