@@ -305,7 +305,8 @@ public final class LimboCommand implements TabExecutor {
                 Player t = a.length > 3 ? online(s, a[3]) : (s instanceof Player p ? p : null);
                 if (f == null || t == null) { Msg.send(s, "<gray>/limbo fx test <effect> [player]  (effects: " + fxNames() + ")"); return; }
                 sfx.show(t, f, 100);
-                Msg.send(s, "<gray>Showing <white>" + f.name().toLowerCase() + "<gray> to <white>" + Msg.esc(t.getName()) + "<gray> for 5s.");
+                Msg.send(s, "<gray>Showing <white>" + f.name().toLowerCase() + "<gray> to <white>" + Msg.esc(t.getName()) + "<gray> for 5s. Console: <white>posteffect list " + Msg.esc(t.getName()));
+                Bukkit.getScheduler().runTaskLater(plugin, () -> Bukkit.dispatchCommand(s, "posteffect list " + t.getName()), 10L);
             }
             case "vanilla" -> { // pipeline check: a built-in effect, no resource pack needed
                 if (!(s instanceof Player p)) return;
