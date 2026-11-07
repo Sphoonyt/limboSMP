@@ -1,7 +1,7 @@
 {
   "textures": {
-    "0": "limbo:effects/shard",
-    "particle": "limbo:effects/shard"
+    "0": "limbo:item/effects/shard",
+    "particle": "limbo:item/effects/shard"
   },
   "elements": [
     {

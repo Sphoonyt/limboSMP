@@ -1,8 +1,11 @@
 {
   "pack": {
-    "description": "Limbo SMP textures",
-    "pack_format": 75,
-    "min_format": 46,
-    "max_format": 999
+    "min_format": [97, 0],
+    "max_format": [999, 0],
+    "description": "hiii"
+  },
+  "textures": {
+    "mipmap_levels": 0,
+    "blur": false
   }
 }

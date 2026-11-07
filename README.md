@@ -1,6 +1,6 @@
 # LimboSMP (ground work)
 
-Paper 1.21.11, Java 21, Gradle (Kotlin DSL). `gradle build` -> `build/libs/LimboSMP-0.1.0.jar`.
+Paper 26.3, Java 25, Gradle (Kotlin DSL). `gradle build` -> `build/libs/LimboSMP-0.1.0.jar`.
 
 Implemented: Incendiary (was Ignition), Vitality (was Serenity), Entropy, Inertia, Reflection, Singularity (packages under `darkness/`). All 6 registry slots are used.
 
@@ -50,8 +50,8 @@ while you are holding the null totem (instead of just carrying it).
 ## Progression locks
 `/limbo unlock|lock <nether|villagers|rifts|enchants>`, `/limbo unlocks`. Everything starts locked. While `rifts` is locked rifts don't auto-spawn.
 
-## Cursed items
-`/limbo cursed [roll|on|off]`. A different set of inert items is active each day (`cursed-items.*`). Holding one lets you use your first channel at double cooldown (no passives).
+## Cursed item
+Admins build a pool: `/limbo cursed pool add [item]` (no item = the one in your hand) / `remove` / `list` / `clear`. `/limbo cursed roll` makes ONE random item from the pool the cursed item (`set <item>` forces one). While it is the cursed item it glows in your hotbar or offhand, and holding it lets you use your first channel at double cooldown (no passives). `cursed-items.rotation-hours` > 0 re-rolls automatically; 0 (default) is manual only.
 
 ## Devotion Core (reroll item) and rituals
 A head item (skin of NormalPlayerSus). Right click: it is consumed and a circle (ritual.radius) stays for ritual.seconds with a floating countdown; when it ends everyone inside is rerolled with the slot machine and the coordinates are announced. Admin: `/limbo give <player> core [n]`. Totem rewards are claimed with `/limbo claim`.
@@ -63,10 +63,25 @@ Started from a rift's menu (Soul Tracking button), not from the soul item.
 Flat: Shield Splintering, Copycat (copies the hit enemy's second flat passive for 30s). Flux: Global Adaptation (5 hearts/second cap after the first hit, 15% less from channels that already hit you in the last hour; history in adaptation.yml). Channels: R Evolution (30s, 180s cd), L Silencing Maw (45s cd). Silenced players lose passives, flux and channels (`StatusManager#silence`).
 
 ## Ability notes
-- Wind charges: `wind-charge.cooldown-seconds` (default 5). Inertia's Quick Charges passive halves it, rounded down.
+- Wind charges: `wind-charge.cooldown-seconds` (default 5). Inertia's Quick Charges flux passive halves it, rounded down.
 - Entropy: Strength I (permanent), Enchain on R (12s), Black Flash on H.
 - Reflection: Reflected Construct (L): 6 block blink in your movement direction, 5s true invisibility, exploding decoy, 2 charges of 45s.
 - Cursed items: first channel only, double cooldown, no passives or flux.
 
 ## Resource pack / model effects
-`resourcepack/` holds the pack assets. Totems use `minecraft:totems/<darkness id>` item models (one texture per darkness, Chimera's is the Entropy texture recoloured green). Flat effect models (`limbo:effects/*`) are shown with ItemDisplay entities through `util/FlatFx`: black hole ring, Enchain chain links (`util/ChainFx`), Propel impact, Temporal Repose halo, Reality Shatter shards. Replace the textures in `assets/limbo/textures/effects/` with final art, keep the file names.
+`resourcepack/` holds the pack assets. Totems use `minecraft:totems/<darkness id>` item models (one texture per darkness, Chimera's is the Entropy texture recoloured green). Flat effect models (`limbo:effects/*`) are shown with ItemDisplay entities through `util/FlatFx`: black hole ring, Enchain chain links (`util/ChainFx`), Propel impact, Temporal Repose halo, Reality Shatter shards. Replace the textures in `assets/limbo/textures/item/effects/` with final art, keep the file names.
+
+
+## On-screen status feedback (26.3 `/posteffect`)
+`status/ScreenFx` shows duration statuses as screen shaders from the pack (`assets/limbo/post_effect/*`, one tint shader `limbo:post/screen_tint`).
+Victims: Enchain, Silencing Maw, Temporal Repose, Axiom Dagger ground, Black Hole, Kinetic Thief (stun and slow share a look, the slow covers less), Spinecutter. You: Evolution, Black Flash buff, Reflected Construct invisibility.
+Each look has 3 strengths (`name_0/1/2`) that are stepped through to fade in/out; the blinky stuns are capped at 60%; at most `screen-fx.max-stacked` looks are drawn; the ambient darkness-fatigue look is always hidden while a status look shows.
+`/limbo fx mode shader|bossbar|both|off`, `/limbo fx test <effect> [player]`, `/limbo fx clear [player]`.
+Regenerate looks: `python3 tools/gen_post_effects.py`. Stuns (Kinetic Thief, Spinecutter) are repeated-teleport stuns (`StatusManager#holdInPlace`).
+
+## Auto enchants
+Holding your null totem enchants the gear you carry (armor, hotbar, offhand) for your darkness; removed when you stop holding it and before items leave you. See `enchant/AutoEnchants`.
+
+## Limbo FX client mod (`fabric-mod/`)
+Chat feedback lines (tagged `limbo_fb`) disappear 10 s after arriving; the mod bundles the resource pack; it says hello on `limbo:hello`.
+`/limbo requiremod on|off` kicks players without it after `mod.grace-seconds` and forces the resource pack. `/limbo reroll [player|all]` rerolls with the slot machine.

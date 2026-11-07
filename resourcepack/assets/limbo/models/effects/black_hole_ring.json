@@ -1,7 +1,7 @@
 {
   "textures": {
-    "0": "limbo:effects/black_hole_ring",
-    "particle": "limbo:effects/black_hole_ring"
+    "0": "limbo:item/effects/black_hole_ring",
+    "particle": "limbo:item/effects/black_hole_ring"
   },
   "elements": [
     {

@@ -1,0 +1,77 @@
+{
+  "targets": {
+    "swap": {}
+  },
+  "passes": [
+    {
+      "vertex_shader": "minecraft:core/screenquad",
+      "fragment_shader": "limbo:post/screen_tint",
+      "inputs": [
+        {
+          "sampler_name": "In",
+          "target": "minecraft:main"
+        }
+      ],
+      "output": "swap",
+      "uniforms": {
+        "TintConfig": [
+          {
+            "name": "EdgeColor",
+            "type": "vec4",
+            "value": [
+              0.5882,
+              0.2745,
+              0.902,
+              0.18
+            ]
+          },
+          {
+            "name": "Shape",
+            "type": "vec4",
+            "value": [
+              0.55,
+              1.0,
+              0.06,
+              0.072
+            ]
+          },
+          {
+            "name": "Misc",
+            "type": "vec4",
+            "value": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "vertex_shader": "minecraft:core/screenquad",
+      "fragment_shader": "minecraft:post/blit",
+      "inputs": [
+        {
+          "sampler_name": "In",
+          "target": "swap"
+        }
+      ],
+      "output": "minecraft:main",
+      "uniforms": {
+        "BlitConfig": [
+          {
+            "name": "ColorModulate",
+            "type": "vec4",
+            "value": [
+              1.0,
+              1.0,
+              1.0,
+              1.0
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

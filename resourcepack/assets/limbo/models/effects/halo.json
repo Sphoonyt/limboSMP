@@ -1,7 +1,7 @@
 {
   "textures": {
-    "0": "limbo:effects/halo",
-    "particle": "limbo:effects/halo"
+    "0": "limbo:item/effects/halo",
+    "particle": "limbo:item/effects/halo"
   },
   "elements": [
     {

@@ -1,0 +1,55 @@
+{
+  "providers": [
+    {
+      "type": "space",
+      "advances": {
+        "🐥": -8
+      }
+    },
+    {
+      "type": "bitmap",
+      "file": "minecraft:hud/channel_1.png",
+      "ascent": 8,
+      "height": 8,
+      "chars": [
+        "𝟏"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "minecraft:hud/channel_2.png",
+      "ascent": 8,
+      "height": 8,
+      "chars": [
+        "𝟐"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "minecraft:hud/flux_off.png",
+      "ascent": 8,
+      "height": 8,
+      "chars": [
+        "🌑"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "minecraft:hud/flux_on.png",
+      "ascent": 8,
+      "height": 8,
+      "chars": [
+        "🌕"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "minecraft:hud/rift_gui.png",
+      "ascent": 14,
+      "height": 128,
+      "chars": [
+        "🧰"
+      ]
+    }
+  ]
+}
