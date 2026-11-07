@@ -27,7 +27,7 @@ import java.util.List;
 public final class LimboCommand implements TabExecutor {
     private static final List<String> PLAYER_SUBS = List.of("darknessinfo", "trust", "claim", "cursed");
     private static final List<String> ADMIN_SUBS = List.of("set", "reset", "siphon", "unsiphon", "give",
-            "rift", "cooldown", "reload", "debug", "event", "unlock", "lock", "unlocks", "reroll", "fx", "requiremod");
+            "rift", "cooldown", "reload", "debug", "event", "unlock", "lock", "unlocks", "reroll", "fx");
 
     private final LimboPlugin plugin;
     private final TrustCommand trustCmd;
@@ -64,7 +64,7 @@ public final class LimboCommand implements TabExecutor {
         Msg.send(s, "<white>/limbo cursed <gray>- the current cursed item, /limbo claim");
         Msg.send(s, "<white>/trust <player> <gray>- stop your abilities from affecting a player (/limbo trust works too)");
         if (isAdmin(s)) {
-            Msg.send(s, "<gray>Admin: <white>set, reset, siphon, unsiphon, give, rift, cooldown, reload, debug, event, unlock, lock, unlocks, reroll, fx, requiremod");
+            Msg.send(s, "<gray>Admin: <white>set, reset, siphon, unsiphon, give, rift, cooldown, reload, debug, event, unlock, lock, unlocks, reroll, fx");
         }
     }
 
@@ -239,16 +239,6 @@ public final class LimboCommand implements TabExecutor {
             case "rift" -> rift(s, a);
             case "reroll" -> reroll(s, a);
             case "fx" -> fx(s, a);
-            case "requiremod" -> {
-                if (a.length < 2) {
-                    Msg.send(s, "<gray>Mod required: " + (plugin.modGate().required() ? "<green>on" : "<red>off") + " <gray>(/limbo requiremod <on|off>)");
-                    return;
-                }
-                boolean on = a[1].equalsIgnoreCase("on") || a[1].equalsIgnoreCase("true");
-                plugin.modGate().setRequired(on);
-                Msg.send(s, "<gray>Limbo FX mod required: " + (on ? "<green>on <gray>(players without it are kicked after "
-                        + plugin.getConfig().getInt("mod.grace-seconds", 15) + "s, the resource pack is forced)" : "<red>off"));
-            }
             case "event" -> plugin.events().command(s, Arrays.copyOfRange(a, 1, a.length));
             case "unlock" -> plugin.unlocks().command(s, true, a);
             case "lock" -> plugin.unlocks().command(s, false, a);
@@ -317,13 +307,19 @@ public final class LimboCommand implements TabExecutor {
                 sfx.show(t, f, 100);
                 Msg.send(s, "<gray>Showing <white>" + f.name().toLowerCase() + "<gray> to <white>" + Msg.esc(t.getName()) + "<gray> for 5s.");
             }
+            case "vanilla" -> { // pipeline check: a built-in effect, no resource pack needed
+                if (!(s instanceof Player p)) return;
+                boolean ok = sfx.raw(p, true, "minecraft:invert");
+                Msg.send(p, "<gray>posteffect add minecraft:invert -> " + (ok ? "<green>ran" : "<red>failed") + "<gray>. You should see inverted colours for 3s.");
+                Bukkit.getScheduler().runTaskLater(plugin, () -> sfx.raw(p, false, "minecraft:invert"), 60L);
+            }
             case "clear" -> {
                 Player t = a.length > 2 ? online(s, a[2]) : (s instanceof Player p ? p : null);
                 if (t == null) return;
                 sfx.clearAll(t);
                 Msg.send(s, "<gray>Cleared the screen effects of <white>" + Msg.esc(t.getName()));
             }
-            default -> Msg.send(s, "<gray>/limbo fx <test <effect> [player] | clear [player] | mode [shader|bossbar|both|off]>  effects: " + fxNames());
+            default -> Msg.send(s, "<gray>/limbo fx <vanilla | test <effect> [player] | clear [player] | mode [shader|bossbar|both|off]>  effects: " + fxNames());
         }
     }
 
@@ -416,8 +412,7 @@ public final class LimboCommand implements TabExecutor {
                 switch (sub) {
                     case "set", "reset", "siphon", "unsiphon", "give" -> Bukkit.getOnlinePlayers().forEach(p -> out.add(p.getName()));
                     case "reroll" -> { out.add("all"); Bukkit.getOnlinePlayers().forEach(p -> out.add(p.getName())); }
-                    case "fx" -> out.addAll(List.of("test", "clear", "mode"));
-                    case "requiremod" -> out.addAll(List.of("on", "off"));
+                    case "fx" -> out.addAll(List.of("vanilla", "test", "clear", "mode"));
                     case "rift" -> out.addAll(List.of("create", "remove", "list", "spawn", "interval", "count", "info"));
                     case "cooldown" -> out.add("reset");
                     case "event" -> out.addAll(List.of("start", "stop", "end", "status", "deity"));
