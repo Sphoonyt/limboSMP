@@ -11,9 +11,6 @@ commands:
     description: Trust a player so your abilities never affect them
     usage: /trust <player|remove <player>|list>
 permissions:
-  limbo.mod.bypass:
-    description: Not kicked when the Limbo FX mod is required
-    default: op
   limbo.admin:
     description: Access to Limbo op commands
     default: op

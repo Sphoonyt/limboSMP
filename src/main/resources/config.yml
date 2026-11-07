@@ -107,10 +107,5 @@ screen-fx:
   mode: shader            # shader | bossbar | both | off   (/limbo fx mode <mode>)
   max-stacked: 2          # at most this many status looks drawn at once
   fatigue-shader: false   # darkness fatigue's ambient look; every status look always covers it
-  console-sender: false   # true = run /posteffect as the console (logs every change) if the silent sender is rejected
+  console-sender: true    # run /posteffect as the console (logs each change). false = silent sender, which some servers reject
 
-# ---- Limbo FX client mod (fabric-mod/): chat feedback fades after 10s, resource pack bundled ----
-mod:
-  required: false         # /limbo requiremod on|off: kick players without the mod, and force the resource pack
-  grace-seconds: 15       # time to say hello after joining
-  download-url: ""        # shown in the kick message
