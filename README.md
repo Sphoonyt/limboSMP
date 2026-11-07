@@ -82,6 +82,5 @@ Regenerate looks: `python3 tools/gen_post_effects.py`. Stuns (Kinetic Thief, Spi
 ## Auto enchants
 Holding your null totem enchants the gear you carry (armor, hotbar, offhand) for your darkness; removed when you stop holding it and before items leave you. See `enchant/AutoEnchants`.
 
-## Limbo FX client mod (`fabric-mod/`)
-Chat feedback lines (tagged `limbo_fb`) disappear 10 s after arriving; the mod bundles the resource pack; it says hello on `limbo:hello`.
-`/limbo requiremod on|off` kicks players without it after `mod.grace-seconds` and forces the resource pack. `/limbo reroll [player|all]` rerolls with the slot machine.
+## Resource pack
+The status shaders need the pack on the client. Set `resource-pack.url`/`sha1` and `resource-pack.required: true` in config.yml to force it (players who decline are kicked by the client). `/limbo reroll [player|all]` rerolls with the slot machine.
