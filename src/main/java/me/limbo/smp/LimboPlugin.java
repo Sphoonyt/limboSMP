@@ -33,6 +33,7 @@ import me.limbo.smp.soul.SoulListener;
 import me.limbo.smp.soul.SoulMenu;
 import me.limbo.smp.soul.SoulTracker;
 import me.limbo.smp.enchant.AutoEnchants;
+import me.limbo.smp.input.CooldownHud;
 import me.limbo.smp.status.FatigueManager;
 import me.limbo.smp.status.ScreenFx;
 import me.limbo.smp.status.StatusManager;
@@ -63,6 +64,7 @@ public final class LimboPlugin extends JavaPlugin {
     private Unlocks unlocks;
     private CursedItems cursed;
     private ScreenFx screenFx;
+    private CooldownHud cooldownHud;
     private AutoEnchants autoEnchants;
     private RewardManager rewards;
     private DevotionRitual ritual;
@@ -99,6 +101,7 @@ public final class LimboPlugin extends JavaPlugin {
         crafting = new RiftCrafting(this);
         status = new StatusManager(this);
         screenFx = new ScreenFx(this);
+        cooldownHud = new CooldownHud(this);
         autoEnchants = new AutoEnchants(this);
         menu = new RiftMenu(this);
         rewards = new RewardManager(this);
@@ -151,6 +154,7 @@ public final class LimboPlugin extends JavaPlugin {
         getCommand("trust").setTabCompleter(trustCmd);
 
         screenFx.start();
+        cooldownHud.start();
         passives.start();
         rifts.start();
         events.start();
@@ -172,6 +176,7 @@ public final class LimboPlugin extends JavaPlugin {
         if (cursed != null) cursed.shutdown();
         if (ritual != null) ritual.shutdown();
         if (screenFx != null) screenFx.shutdown();
+        if (cooldownHud != null) cooldownHud.shutdown();
         if (autoEnchants != null) autoEnchants.shutdown();
         if (riftTeleport != null) riftTeleport.shutdown();
         if (soulTracker != null) soulTracker.shutdown();

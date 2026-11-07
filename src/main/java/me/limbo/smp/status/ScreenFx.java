@@ -255,7 +255,7 @@ public final class ScreenFx implements Listener {
 
     /** Runs one /posteffect add|remove. @return what the command returned (false = it failed or did nothing). */
     public boolean raw(Player p, boolean add, String effectId) {
-        String cmd = "posteffect " + (add ? "add " : "remove ") + p.getUniqueId() + " " + effectId;
+        String cmd = "posteffect " + (add ? "add " : "remove ") + p.getName() + " " + effectId;
         try {
             boolean ok = Bukkit.dispatchCommand(plugin.getConfig().getBoolean("screen-fx.console-sender", true) ? Bukkit.getConsoleSender() : silent, cmd);
             if (plugin.isDebug(p.getUniqueId())) plugin.getLogger().info("[fx] " + cmd + " -> " + ok);
@@ -267,10 +267,11 @@ public final class ScreenFx implements Listener {
     }
 
     private void post(Player p, boolean add, String id) {
-        String cmd = "posteffect " + (add ? "add " : "remove ") + p.getUniqueId() + " limbo:" + id;
+        String cmd = "posteffect " + (add ? "add " : "remove ") + p.getName() + " limbo:" + id;
         try {
-            if (plugin.isDebug(p.getUniqueId())) plugin.getLogger().info("[fx] " + cmd);
-            Bukkit.dispatchCommand(plugin.getConfig().getBoolean("screen-fx.console-sender", true) ? Bukkit.getConsoleSender() : silent, cmd);
+            boolean ok = Bukkit.dispatchCommand(plugin.getConfig().getBoolean("screen-fx.console-sender", true) ? Bukkit.getConsoleSender() : silent, cmd);
+            if (!ok && add) plugin.getLogger().warning("[fx] command did nothing: " + cmd);
+            else if (plugin.isDebug(p.getUniqueId())) plugin.getLogger().info("[fx] " + cmd + " -> " + ok);
         } catch (Throwable t) {
             plugin.getLogger().warning("posteffect failed (" + cmd + "): " + t);
         }
@@ -281,7 +282,7 @@ public final class ScreenFx implements Listener {
         if (m != null) for (Entry e : m.values()) dropBar(p, e);
         try {
             Bukkit.dispatchCommand(plugin.getConfig().getBoolean("screen-fx.console-sender", true) ? Bukkit.getConsoleSender() : silent,
-                    "posteffect clear " + p.getUniqueId());
+                    "posteffect clear " + p.getName());
         } catch (Throwable ignored) { }
     }
 
