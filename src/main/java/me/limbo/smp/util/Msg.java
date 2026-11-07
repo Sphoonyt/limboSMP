@@ -16,12 +16,4 @@ public final class Msg {
 
     public static void send(CommandSender to, String s) { to.sendMessage(parse(PREFIX + s)); }
 
-    /**
-     * Marker put on ability feedback lines. The Limbo FX client mod removes any chat line carrying it 10 seconds
-     * after it arrives (it is a shift-click insertion string, invisible and harmless for players without the mod).
-     */
-    public static final String FADE_TAG = "limbo_fb";
-
-    /** Like send(), but the line fades out of chat after 10 seconds for players running the Limbo FX mod. */
-    public static void sendFading(CommandSender to, String s) { to.sendMessage(parse(PREFIX + s).insertion(FADE_TAG)); }
 }

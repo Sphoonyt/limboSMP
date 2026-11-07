@@ -34,7 +34,6 @@ import me.limbo.smp.soul.SoulMenu;
 import me.limbo.smp.soul.SoulTracker;
 import me.limbo.smp.enchant.AutoEnchants;
 import me.limbo.smp.status.FatigueManager;
-import me.limbo.smp.status.ModGate;
 import me.limbo.smp.status.ScreenFx;
 import me.limbo.smp.status.StatusManager;
 import me.limbo.smp.trust.TrustManager;
@@ -64,7 +63,6 @@ public final class LimboPlugin extends JavaPlugin {
     private Unlocks unlocks;
     private CursedItems cursed;
     private ScreenFx screenFx;
-    private ModGate modGate;
     private AutoEnchants autoEnchants;
     private RewardManager rewards;
     private DevotionRitual ritual;
@@ -101,7 +99,6 @@ public final class LimboPlugin extends JavaPlugin {
         crafting = new RiftCrafting(this);
         status = new StatusManager(this);
         screenFx = new ScreenFx(this);
-        modGate = new ModGate(this);
         autoEnchants = new AutoEnchants(this);
         menu = new RiftMenu(this);
         rewards = new RewardManager(this);
@@ -141,7 +138,6 @@ public final class LimboPlugin extends JavaPlugin {
         pm.registerEvents(new SiphonListener(this), this);
         pm.registerEvents(status, this);
         pm.registerEvents(screenFx, this);
-        pm.registerEvents(modGate, this);
         pm.registerEvents(autoEnchants, this);
         for (Darkness d : registry.all()) {
             for (var l : d.listeners()) pm.registerEvents(l, this);
@@ -154,7 +150,6 @@ public final class LimboPlugin extends JavaPlugin {
         getCommand("trust").setExecutor(trustCmd);
         getCommand("trust").setTabCompleter(trustCmd);
 
-        modGate.register();
         screenFx.start();
         passives.start();
         rifts.start();
@@ -177,7 +172,6 @@ public final class LimboPlugin extends JavaPlugin {
         if (cursed != null) cursed.shutdown();
         if (ritual != null) ritual.shutdown();
         if (screenFx != null) screenFx.shutdown();
-        if (modGate != null) modGate.shutdown();
         if (autoEnchants != null) autoEnchants.shutdown();
         if (riftTeleport != null) riftTeleport.shutdown();
         if (soulTracker != null) soulTracker.shutdown();
@@ -251,7 +245,6 @@ public final class LimboPlugin extends JavaPlugin {
     public Unlocks unlocks() { return unlocks; }
     public CursedItems cursed() { return cursed; }
     public ScreenFx screenFx() { return screenFx; }
-    public ModGate modGate() { return modGate; }
     public AutoEnchants autoEnchants() { return autoEnchants; }
     public RewardManager rewards() { return rewards; }
     public DevotionRitual ritual() { return ritual; }
