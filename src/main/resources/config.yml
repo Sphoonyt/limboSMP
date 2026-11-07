@@ -81,13 +81,12 @@ events:
     line-seconds: 4
 
 # ---- cursed items ----
-# A pool of inert crafting items. Every rotation-hours a different set is "active". Holding an active one (main hand or
-# offhand) lets you use your FIRST channel at double cooldown. They give no passives.
+# Admins pick a pool of items, /limbo cursed roll makes ONE of them the cursed item. It glows in your hotbar/offhand;
+# holding it lets you use your FIRST channel at double cooldown. No passives.
 cursed-items:
   enabled: true
-  rotation-hours: 24
-  active-count: 2       # how many items are active at once
-  pool: []              # empty = built-in list (iron nugget, flint, leather, phantom membrane, ...). Material names.
+  rotation-hours: 0     # 0 = only changes when an admin runs /limbo cursed roll
+  # the pool is edited in game (/limbo cursed pool add|remove|list|clear) and saved in cursed.yml
 
 # ---- progression locks (/limbo unlock|lock|unlocks <nether|villagers|rifts|enchants>) ----
 unlocks:
@@ -102,3 +101,16 @@ ritual:
 # ---- wind charges ----
 wind-charge:
   cooldown-seconds: 5    # whole seconds between throws (0 = vanilla). Inertia's Quick Charges halves it, rounded down.
+
+# ---- on-screen status feedback (26.3 /posteffect shaders from the resource pack) ----
+screen-fx:
+  mode: shader            # shader | bossbar | both | off   (/limbo fx mode <mode>)
+  max-stacked: 2          # at most this many status looks drawn at once
+  fatigue-shader: false   # darkness fatigue's ambient look; every status look always covers it
+  console-sender: false   # true = run /posteffect as the console (logs every change) if the silent sender is rejected
+
+# ---- Limbo FX client mod (fabric-mod/): chat feedback fades after 10s, resource pack bundled ----
+mod:
+  required: false         # /limbo requiremod on|off: kick players without the mod, and force the resource pack
+  grace-seconds: 15       # time to say hello after joining
+  download-url: ""        # shown in the kick message
