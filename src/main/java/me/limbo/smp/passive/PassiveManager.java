@@ -42,6 +42,8 @@ public final class PassiveManager {
         plugin.items().syncTotems(p);
         Darkness d = plugin.data().getDarkness(p);
         plugin.fatigue().tick(p);
+        plugin.screenFx().ambient(p, me.limbo.smp.status.ScreenFx.Fx.FATIGUE, plugin.fatigue().isFatigued(p.getUniqueId()));
+        plugin.autoEnchants().tick(p);
         boolean hasOrb = d != null && plugin.passivesActive(p, d.id());
         Darkness wantPassive = hasOrb ? d : null;
         Darkness wantFlux = (hasOrb && plugin.fluxActive(p, d.id())) ? d : null;

@@ -34,7 +34,6 @@ public final class FatigueManager {
         }
         uses.clear();
         until.put(id, now + FATIGUE_MS);
-        Msg.send(p, "<dark_red>Darkness fatigue<gray>: your passives only work while you <white>hold<gray> the null totem for 30 seconds.");
     }
 
     public boolean isFatigued(UUID id) {
@@ -49,7 +48,6 @@ public final class FatigueManager {
         Long u = until.get(p.getUniqueId());
         if (u != null && u <= System.currentTimeMillis()) {
             until.remove(p.getUniqueId());
-            p.sendActionBar(Msg.parse("<gray>Darkness fatigue has worn off."));
         }
     }
 

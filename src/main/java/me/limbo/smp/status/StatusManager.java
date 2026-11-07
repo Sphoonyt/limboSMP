@@ -9,6 +9,9 @@ import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Mob;
+import org.bukkit.event.player.PlayerTeleportEvent;
+import io.papermc.paper.entity.TeleportFlag;
+import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
 import org.bukkit.entity.WindCharge;
@@ -44,6 +47,10 @@ public final class StatusManager implements Listener {
     private final Map<UUID, Long> stunUntil = new HashMap<>();
     private final Map<UUID, LivingEntity> stunned = new HashMap<>();
     private final Map<UUID, BukkitTask> stunTasks = new HashMap<>();
+    /** Teleport stun: where each stunned entity is held, and the task that puts them back every tick. */
+    private final Map<UUID, Location> stunHold = new HashMap<>();
+    private final Map<UUID, Boolean> stunHoldY = new HashMap<>();
+    private final Map<UUID, BukkitTask> stunHoldTasks = new HashMap<>();
 
     private final Map<UUID, Long> slowUntil = new HashMap<>();
     private final Map<UUID, LivingEntity> slowed = new HashMap<>();
@@ -106,13 +113,55 @@ public final class StatusManager implements Listener {
         stunUntil.put(id, System.currentTimeMillis() + ticks * 50L);
         stunned.put(id, e);
         stunTasks.put(id, Bukkit.getScheduler().runTaskLater(plugin, () -> endStun(id), ticks));
-        if (e instanceof Player p) p.sendActionBar(Msg.parse("<dark_red>Stunned"));
+        holdInPlace(e);
+    }
+
+    /**
+     * Teleport stun: besides the movement/jump attribute lock, the entity is put back at the spot it was stunned at
+     * every tick it drifts from it (knockback, wind charges, momentum, lag-back all lose). Standing on the ground you
+     * are held completely still; in the air only the horizontal position is held, so gravity still works.
+     * Your camera is never touched (yaw/pitch are relative), only the position.
+     */
+    private void holdInPlace(LivingEntity e) {
+        UUID id = e.getUniqueId();
+        BukkitTask old = stunHoldTasks.remove(id);
+        if (old != null) old.cancel();
+        stunHold.put(id, e.getLocation().clone());
+        stunHoldY.put(id, e.isOnGround());
+        stunHoldTasks.put(id, Bukkit.getScheduler().runTaskTimer(plugin, () -> {
+            Location lock = stunHold.get(id);
+            if (lock == null || !e.isValid() || e.isDead() || !isStunned(id)) { stopHold(id); return; }
+            if (e.isInsideVehicle()) return;
+            Location cur = e.getLocation();
+            if (cur.getWorld() != lock.getWorld()) { stopHold(id); return; }
+            double dx = cur.getX() - lock.getX(), dz = cur.getZ() - lock.getZ();
+            boolean lockY = Boolean.TRUE.equals(stunHoldY.get(id));
+            boolean drifted = dx * dx + dz * dz > 0.0009 || (lockY && Math.abs(cur.getY() - lock.getY()) > 0.03);
+            if (!drifted) return;
+            Location back = new Location(lock.getWorld(), lock.getX(), lockY ? lock.getY() : cur.getY(), lock.getZ(), 0f, 0f);
+            if (e instanceof Player p) {
+                p.teleport(back, PlayerTeleportEvent.TeleportCause.PLUGIN, TeleportFlag.Relative.YAW, TeleportFlag.Relative.PITCH);
+            } else {
+                back.setYaw(cur.getYaw());
+                back.setPitch(cur.getPitch());
+                e.teleport(back);
+            }
+            e.setVelocity(new org.bukkit.util.Vector(0, lockY ? 0 : e.getVelocity().getY(), 0));
+        }, 1L, 1L));
+    }
+
+    private void stopHold(UUID id) {
+        BukkitTask t = stunHoldTasks.remove(id);
+        if (t != null) t.cancel();
+        stunHold.remove(id);
+        stunHoldY.remove(id);
     }
 
     private void endStun(UUID id) {
         BukkitTask t = stunTasks.remove(id);
         if (t != null) t.cancel();
         stunUntil.remove(id);
+        stopHold(id);
         LivingEntity e = stunned.remove(id);
         if (e == null) return;
         clearMod(e, Attribute.MOVEMENT_SPEED, stunMove);

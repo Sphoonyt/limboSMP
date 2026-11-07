@@ -15,7 +15,7 @@ public final class Feedback {
 
     /** To the caster: "activated <channel>". */
     public static void activated(Player p, String channel) {
-        Msg.send(p, "<gray>activated <white>" + Msg.esc(channel));
+        Msg.sendFading(p, "<gray>activated <white>" + Msg.esc(channel));
     }
 
     /** To whoever is hit by a channel (good or bad): "you have been affected by <channel> from <player>". */
@@ -28,7 +28,7 @@ public final class Feedback {
         if (prev != null && now - prev < DEDUPE_MS) return;
         if (last.size() > 500) last.values().removeIf(v -> now - v > DEDUPE_MS);
         last.put(key, now);
-        Msg.send(t, "<gray>you have been affected by <white>" + Msg.esc(channel)
+        Msg.sendFading(t, "<gray>you have been affected by <white>" + Msg.esc(channel)
                 + "<gray> from <white>" + Msg.esc(source.getName()));
     }
 }

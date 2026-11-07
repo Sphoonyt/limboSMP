@@ -43,8 +43,21 @@ public final class FlatFx {
     }
 
     /** Spawns a display of the given model at `at`. Scale 1 = the model's natural size (16 pixels = 1 block). */
+    /**
+     * A copy of `l` with yaw and pitch zeroed. A display entity turns its whole model with the entity's own rotation,
+     * and the locations passed in here are often a player's (their look direction). That is what made Enchain's chain
+     * (and the other flat effects) twist differently depending on where you were looking: all orientation must come
+     * from the Transformation only, so the entity itself always faces yaw 0 / pitch 0.
+     */
+    private static Location unrotated(Location l) {
+        Location c = l.clone();
+        c.setYaw(0f);
+        c.setPitch(0f);
+        return c;
+    }
+
     public static ItemDisplay spawn(Location at, NamespacedKey model, Display.Billboard billboard) {
-        return at.getWorld().spawn(at, ItemDisplay.class, d -> {
+        return at.getWorld().spawn(unrotated(at), ItemDisplay.class, d -> {
             ItemStack it = new ItemStack(Material.PAPER);
             ItemMeta m = it.getItemMeta();
             m.setItemModel(model);
@@ -72,7 +85,7 @@ public final class FlatFx {
     public static void move(ItemDisplay d, Location to, int ticks) {
         if (d == null || !d.isValid()) return;
         d.setTeleportDuration(Math.max(1, Math.min(59, ticks)));
-        d.teleport(to);
+        d.teleport(unrotated(to));
     }
 
     public static void remove(Entity d) {

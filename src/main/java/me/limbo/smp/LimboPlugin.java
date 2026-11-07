@@ -16,7 +16,6 @@ import me.limbo.smp.data.PlayerListener;
 import me.limbo.smp.event.EventManager;
 import me.limbo.smp.input.InputDispatcher;
 import me.limbo.smp.input.InputListener;
-import me.limbo.smp.input.CooldownHud;
 import me.limbo.smp.item.CursedItems;
 import me.limbo.smp.item.ItemGlowListener;
 import me.limbo.smp.item.LimboItems;
@@ -33,7 +32,10 @@ import me.limbo.smp.siphon.SiphonListener;
 import me.limbo.smp.soul.SoulListener;
 import me.limbo.smp.soul.SoulMenu;
 import me.limbo.smp.soul.SoulTracker;
+import me.limbo.smp.enchant.AutoEnchants;
 import me.limbo.smp.status.FatigueManager;
+import me.limbo.smp.status.ModGate;
+import me.limbo.smp.status.ScreenFx;
 import me.limbo.smp.status.StatusManager;
 import me.limbo.smp.trust.TrustManager;
 import org.bukkit.Bukkit;
@@ -61,7 +63,9 @@ public final class LimboPlugin extends JavaPlugin {
     private EventManager events;
     private Unlocks unlocks;
     private CursedItems cursed;
-    private CooldownHud cooldownHud;
+    private ScreenFx screenFx;
+    private ModGate modGate;
+    private AutoEnchants autoEnchants;
     private RewardManager rewards;
     private DevotionRitual ritual;
     private RiftTeleport riftTeleport;
@@ -92,11 +96,13 @@ public final class LimboPlugin extends JavaPlugin {
         data = new PlayerDataManager(this);
         trust = new TrustManager(this);
         dispatcher = new InputDispatcher(this);
-        cooldownHud = new CooldownHud(this);
         passives = new PassiveManager(this);
         rifts = new RiftManager(this);
         crafting = new RiftCrafting(this);
         status = new StatusManager(this);
+        screenFx = new ScreenFx(this);
+        modGate = new ModGate(this);
+        autoEnchants = new AutoEnchants(this);
         menu = new RiftMenu(this);
         rewards = new RewardManager(this);
         ritual = new DevotionRitual(this);
@@ -112,7 +118,7 @@ public final class LimboPlugin extends JavaPlugin {
         rifts.load();
         crafting.reload();
         events.load();
-        if (cursed.enabled() && cursed.active().isEmpty()) cursed.roll(false);
+        if (cursed.enabled() && cursed.current() == null && !cursed.pool().isEmpty()) cursed.roll(false);
 
         var pm = Bukkit.getPluginManager();
         pm.registerEvents(new PlayerListener(this), this);
@@ -134,6 +140,9 @@ public final class LimboPlugin extends JavaPlugin {
         pm.registerEvents(new ItemGlowListener(this), this);
         pm.registerEvents(new SiphonListener(this), this);
         pm.registerEvents(status, this);
+        pm.registerEvents(screenFx, this);
+        pm.registerEvents(modGate, this);
+        pm.registerEvents(autoEnchants, this);
         for (Darkness d : registry.all()) {
             for (var l : d.listeners()) pm.registerEvents(l, this);
         }
@@ -145,11 +154,12 @@ public final class LimboPlugin extends JavaPlugin {
         getCommand("trust").setExecutor(trustCmd);
         getCommand("trust").setTabCompleter(trustCmd);
 
+        modGate.register();
+        screenFx.start();
         passives.start();
         rifts.start();
         events.start();
         cursed.start();
-        cooldownHud.start();
         ritual.load();
         ritual.start();
         Bukkit.getScheduler().runTaskTimer(this, () -> data.saveIfDirty(), 20L * 60, 20L * 60);
@@ -165,8 +175,10 @@ public final class LimboPlugin extends JavaPlugin {
         if (menu != null) menu.shutdown();
         if (events != null) events.shutdown();
         if (cursed != null) cursed.shutdown();
-        if (cooldownHud != null) cooldownHud.shutdown();
         if (ritual != null) ritual.shutdown();
+        if (screenFx != null) screenFx.shutdown();
+        if (modGate != null) modGate.shutdown();
+        if (autoEnchants != null) autoEnchants.shutdown();
         if (riftTeleport != null) riftTeleport.shutdown();
         if (soulTracker != null) soulTracker.shutdown();
         if (passives != null) passives.shutdown();
@@ -238,7 +250,9 @@ public final class LimboPlugin extends JavaPlugin {
     public EventManager events() { return events; }
     public Unlocks unlocks() { return unlocks; }
     public CursedItems cursed() { return cursed; }
-    public CooldownHud cooldownHud() { return cooldownHud; }
+    public ScreenFx screenFx() { return screenFx; }
+    public ModGate modGate() { return modGate; }
+    public AutoEnchants autoEnchants() { return autoEnchants; }
     public RewardManager rewards() { return rewards; }
     public DevotionRitual ritual() { return ritual; }
     public RiftTeleport riftTeleport() { return riftTeleport; }
