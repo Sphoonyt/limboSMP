@@ -43,21 +43,21 @@ public final class ScreenFx implements Listener {
     /** One status look. `file` is the base name of the post effects in assets/limbo/post_effect. */
     public enum Fx {
         // victims
-        ENCHAIN("enchain", "Enchained", BossBar.Color.RED, 1, null, 0, 0),
-        SILENCE("silence", "Silenced", BossBar.Color.GREEN, 1, null, 0, 0),
-        REPOSE("repose", "Time slowed", BossBar.Color.PINK, 1, null, 0, 0),
-        AXIOM_GROUND("axiom", "Grounded", BossBar.Color.PURPLE, 1, null, 0, 0),
-        BLACK_HOLE("black_hole", "Black Hole", BossBar.Color.PURPLE, 1, null, 0, 0),
+        ENCHAIN("enchain", "Enchained", BossBar.Color.RED, 1, null, 0, 0, true),
+        SILENCE("silence", "Silenced", BossBar.Color.GREEN, 1, null, 0, 0, false),
+        REPOSE("repose", "Time slowed", BossBar.Color.PINK, 1, null, 0, 0, true),
+        AXIOM_GROUND("axiom", "Grounded", BossBar.Color.PURPLE, 1, null, 0, 0, false),
+        BLACK_HOLE("black_hole", "Black Hole", BossBar.Color.PURPLE, 1, null, 0, 0, false),
         /** Stun and slow from Kinetic Thief share a look; the slow covers less. Blinky, so capped at 60%. */
-        KINETIC_STUN("kinetic_stun", "Stunned", BossBar.Color.WHITE, 1, "kinetic", 1, 1),
-        KINETIC_SLOW("kinetic_slow", "Slowed", BossBar.Color.WHITE, 1, "kinetic", 0, 0),
-        SPINECUTTER("spinecutter", "Stunned", BossBar.Color.RED, 1, null, 0, 1),
+        KINETIC_STUN("kinetic_stun", "Stunned", BossBar.Color.WHITE, 1, "kinetic", 1, 1, false),
+        KINETIC_SLOW("kinetic_slow", "Slowed", BossBar.Color.WHITE, 1, "kinetic", 0, 0, false),
+        SPINECUTTER("spinecutter", "Stunned", BossBar.Color.RED, 1, null, 0, 1, false),
         // on yourself
-        EVOLUTION("evolution", "Evolved", BossBar.Color.GREEN, 1, null, 0, 0),
-        BLACK_FLASH("black_flash", "Black Flash", BossBar.Color.RED, 1, null, 0, 0),
-        CONSTRUCT("construct", "Unseen", BossBar.Color.BLUE, 1, null, 0, 0),
+        EVOLUTION("evolution", "Evolved", BossBar.Color.GREEN, 1, null, 0, 0, false),
+        BLACK_FLASH("black_flash", "Black Flash", BossBar.Color.RED, 1, null, 0, 0, false),
+        CONSTRUCT("construct", "Unseen", BossBar.Color.BLUE, 1, null, 0, 0, false),
         // ambient: always loses to the statuses above
-        FATIGUE("fatigue", "Darkness fatigue", BossBar.Color.WHITE, 0, null, 0, 0);
+        FATIGUE("fatigue", "Darkness fatigue", BossBar.Color.WHITE, 0, null, 0, 0, false);
 
         final String file;
         final String title;
@@ -69,8 +69,11 @@ public final class ScreenFx implements Listener {
         final int rank;
         /** Strongest strength allowed: 0 = full, 1 = ~60%. Used by blinky effects. */
         final int cap;
+        /** Always gets a boss bar (victims of Enchain / Temporal Repose), whatever screen-fx.mode is. */
+        final boolean bar;
 
-        Fx(String file, String title, BossBar.Color barColor, int layer, String group, int rank, int cap) {
+        Fx(String file, String title, BossBar.Color barColor, int layer, String group, int rank, int cap, boolean bar) {
+            this.bar = bar;
             this.file = file;
             this.title = title;
             this.barColor = barColor;
@@ -176,7 +179,7 @@ public final class ScreenFx implements Listener {
     /** Ambient layers (darkness fatigue) call this every tick they are true; they stop the moment it isn't. */
     public void ambient(Player p, Fx fx, boolean on) {
         if (!on) return;
-        if (fx == Fx.FATIGUE && !plugin.getConfig().getBoolean("screen-fx.fatigue-shader", false)) return;
+        if (fx == Fx.FATIGUE && !plugin.getConfig().getBoolean("screen-fx.fatigue-shader", true)) return;
         show(p, fx, 24);
     }
 
@@ -289,7 +292,7 @@ public final class ScreenFx implements Listener {
     // ------------------------------------------------------------ boss bars (mode bossbar / both)
 
     private void updateBar(Player p, Fx fx, Entry e, long now) {
-        if (!bars() || fx.layer == 0) { dropBar(p, e); return; }
+        if (!(bars() || fx.bar) || fx.layer == 0) { dropBar(p, e); return; }
         if (e.until <= now) { dropBar(p, e); return; }
         long total = Math.max(1L, e.until - e.start);
         float progress = Math.max(0f, Math.min(1f, (e.until - now) / (float) total));

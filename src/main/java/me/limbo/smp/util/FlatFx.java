@@ -37,6 +37,7 @@ public final class FlatFx {
     public static final NamespacedKey IMPACT = key("limbo:effects/impact");
     public static final NamespacedKey HALO = key("limbo:effects/halo");
     public static final NamespacedKey SHARD = key("limbo:effects/shard");
+    public static final NamespacedKey FURNACE_BOLT = key("limbo:effects/furnace_bolt");
 
     private static NamespacedKey key(String s) {
         return Objects.requireNonNull(NamespacedKey.fromString(s), s);
