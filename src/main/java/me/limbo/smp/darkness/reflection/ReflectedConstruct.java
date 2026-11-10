@@ -142,7 +142,10 @@ public final class ReflectedConstruct extends Channel implements Listener {
 
         Location origin = p.getLocation().clone();
         Location dest = destination(p, moveDirection(p));
-        if (dest.distanceSquared(origin) < 1.0) {
+        // standing still (no movement keys): no teleport, Speed III for 5 seconds instead
+        Input in = p.getCurrentInput();
+        boolean still = !(in.isForward() || in.isBackward() || in.isLeft() || in.isRight());
+        if (!still && dest.distanceSquared(origin) < 1.0) {
             return false; // charge not spent
         }
 
@@ -155,7 +158,8 @@ public final class ReflectedConstruct extends Channel implements Listener {
         Mannequin m = cast.spawn(origin);
         byClone.put(m.getUniqueId(), cast);
 
-        p.teleport(dest);
+        if (still) p.addPotionEffect(new org.bukkit.potion.PotionEffect(org.bukkit.potion.PotionEffectType.SPEED, 100, 2, false, true, true));
+        else p.teleport(dest);
         beginInvisibility(p);
         cast.start();
         p.playSound(p.getLocation(), Sound.ENTITY_ENDERMAN_TELEPORT, 0.15f, 1.7f); // only you hear it

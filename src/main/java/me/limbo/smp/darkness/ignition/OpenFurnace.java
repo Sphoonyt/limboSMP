@@ -131,10 +131,13 @@ public final class OpenFurnace extends Channel implements Listener {
         Predicate<Entity> filter = e -> e instanceof LivingEntity le && !e.equals(p) && !hit.contains(e.getUniqueId())
                 && Targeting.canHarm(p, le) && Targeting.isEnemy(le);
 
+        // the bolt itself is a model (resource pack: limbo:effects/furnace_bolt); the flame particles trail it
+        org.bukkit.entity.ItemDisplay bolt = me.limbo.smp.util.FlatFx.spawn(pos, me.limbo.smp.util.FlatFx.FURNACE_BOLT, org.bukkit.entity.Display.Billboard.FIXED);
+        me.limbo.smp.util.FlatFx.shape(bolt, new org.joml.Vector3f(0.9f, 1.8f, 0.9f), me.limbo.smp.util.FlatFx.yTo(dir), new org.joml.Quaternionf(), 0);
         new BukkitRunnable() {
             double travelled = 0;
             @Override public void run() {
-                if (!p.isOnline()) { cancel(); return; }
+                if (!p.isOnline()) { me.limbo.smp.util.FlatFx.remove(bolt); cancel(); return; }
                 Location from = pos.clone();
                 double remaining = SPEED;
                 while (remaining > 0.01) {
@@ -153,13 +156,15 @@ public final class OpenFurnace extends Channel implements Listener {
                     Location at = hp.toLocation(w);
                     w.spawnParticle(Particle.FLAME, at, 12, 0.2, 0.2, 0.2, 0.05, null, true);
                     w.playSound(at, Sound.BLOCK_FIRE_EXTINGUISH, 0.6f, 1.2f);
+                    me.limbo.smp.util.FlatFx.remove(bolt);
                     cancel();
                     return;
                 }
                 drawArrow(w, pos, dir);
                 pos.add(dir.clone().multiply(SPEED));
                 travelled += SPEED;
-                if (travelled >= RANGE) cancel();
+                me.limbo.smp.util.FlatFx.move(bolt, pos, 1);
+                if (travelled >= RANGE) { me.limbo.smp.util.FlatFx.remove(bolt); cancel(); }
             }
         }.runTaskTimer(pl(), 0L, 1L);
     }
