@@ -18,23 +18,41 @@ def hexrgb(h):
     return [int(h[i:i + 2], 16) / 255.0 for i in (0, 2, 4)]
 
 # name: (colour, edge strength, clear radius, full radius, desaturate, rim darkening, whole-screen tint, fringing)
+# (stronger than the first pass: the rim now starts closer to the centre and is more opaque)
 LOOKS = {
     # victims
-    "enchain":       ("#961428", 0.34, 0.55, 1.05, 0.14, 0.10, 0.00, 0.000),
-    "silence":       ("#46be5a", 0.30, 0.50, 1.00, 0.30, 0.08, 0.04, 0.000),
-    "repose":        ("#ffafcd", 0.28, 0.50, 1.00, 0.20, 0.00, 0.05, 0.003),
-    "axiom":         ("#9646e6", 0.30, 0.55, 1.00, 0.10, 0.12, 0.00, 0.000),
-    "black_hole":    ("#05000c", 0.55, 0.35, 0.95, 0.30, 0.20, 0.00, 0.000),
-    "kinetic_stun":  ("#40e0d0", 0.34, 0.45, 0.98, 0.12, 0.05, 0.00, 0.002),
-    "kinetic_slow":  ("#40e0d0", 0.26, 0.70, 1.15, 0.00, 0.00, 0.00, 0.000),   # same look, covers far less
-    "spinecutter":   ("#961428", 0.30, 0.50, 1.00, 0.10, 0.08, 0.00, 0.000),
-    # buffs on yourself: a thin rim only
-    "evolution":     ("#46be5a", 0.18, 0.70, 1.15, 0.00, 0.00, 0.02, 0.000),
-    "black_flash":   ("#c81020", 0.24, 0.70, 1.15, 0.00, 0.10, 0.00, 0.000),
-    "construct":     ("#a5cdff", 0.18, 0.70, 1.15, 0.00, 0.00, 0.03, 0.002),
-    # ambient (darkness fatigue): the status overlays above always replace it
-    "fatigue":       ("#14141c", 0.22, 0.45, 1.00, 0.20, 0.10, 0.00, 0.000),
+    "enchain":       ("#961428", 0.62, 0.40, 0.95, 0.25, 0.18, 0.05, 0.000),
+    "silence":       ("#46be5a", 0.55, 0.38, 0.92, 0.45, 0.14, 0.08, 0.000),
+    "repose":        ("#ffafcd", 0.52, 0.38, 0.92, 0.35, 0.00, 0.10, 0.005),
+    "axiom":         ("#9646e6", 0.58, 0.40, 0.92, 0.22, 0.20, 0.04, 0.000),
+    "black_hole":    ("#05000c", 0.80, 0.25, 0.85, 0.45, 0.35, 0.00, 0.000),
+    "kinetic_stun":  ("#40e0d0", 0.60, 0.32, 0.90, 0.22, 0.10, 0.04, 0.004),
+    "kinetic_slow":  ("#40e0d0", 0.48, 0.55, 1.05, 0.05, 0.00, 0.00, 0.000),   # same look, covers far less
+    "spinecutter":   ("#961428", 0.58, 0.38, 0.92, 0.20, 0.16, 0.03, 0.000),
+    # buffs on yourself
+    "evolution":     ("#46be5a", 0.42, 0.52, 1.05, 0.00, 0.00, 0.05, 0.000),
+    "black_flash":   ("#c81020", 0.50, 0.50, 1.05, 0.00, 0.20, 0.00, 0.000),
+    "construct":     ("#a5cdff", 0.40, 0.52, 1.05, 0.00, 0.00, 0.07, 0.004),
 }
+# fatigue is its own shader: dark purple cracks along the sides (assets/limbo/shaders/post/cracks.fsh)
+CRACKS = ("#0b0212", 0.30, 0.95, 1.0, 6.0)  # colour, start, dense, strength at full, scale
+
+def cracks(k):
+    col, start, dense, strength, scale = CRACKS
+    r, g, b = hexrgb(col)
+    return {
+        "targets": {"swap": {}},
+        "passes": [
+            {"vertex_shader": "minecraft:core/screenquad", "fragment_shader": "limbo:post/cracks",
+             "inputs": [{"sampler_name": "In", "target": "minecraft:main"}], "output": "swap",
+             "uniforms": {"CrackConfig": [
+                 {"name": "CrackColor", "type": "vec4", "value": [round(r, 4), round(g, 4), round(b, 4), 1.0]},
+                 {"name": "Params", "type": "vec4", "value": [start, dense, round(strength * k, 4), scale]}]}},
+            {"vertex_shader": "minecraft:core/screenquad", "fragment_shader": "minecraft:post/blit",
+             "inputs": [{"sampler_name": "In", "target": "swap"}], "output": "minecraft:main",
+             "uniforms": {"BlitConfig": [{"name": "ColorModulate", "type": "vec4", "value": [1.0, 1.0, 1.0, 1.0]}]}},
+        ],
+    }
 
 def effect(look, k):
     col, edge, clear, full, desat, dark, tint, fringe = look
@@ -63,4 +81,8 @@ for name, look in LOOKS.items():
         with open(os.path.join(OUT, f"{name}_{lvl}.json"), "w") as f:
             json.dump(effect(look, k), f, indent=2)
             f.write("\n")
-print("wrote", len(LOOKS) * len(LEVELS), "post effects to", os.path.normpath(OUT))
+for lvl, k in enumerate(LEVELS):
+    with open(os.path.join(OUT, f"fatigue_{lvl}.json"), "w") as f:
+        json.dump(cracks(k), f, indent=2)
+        f.write("\n")
+print("wrote", (len(LOOKS) + 1) * len(LEVELS), "post effects to", os.path.normpath(OUT))
