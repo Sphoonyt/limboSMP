@@ -34,20 +34,18 @@ LOOKS = {
     "black_flash":   ("#c81020", 0.50, 0.50, 1.05, 0.00, 0.20, 0.00, 0.000),
     "construct":     ("#a5cdff", 0.40, 0.52, 1.05, 0.00, 0.00, 0.07, 0.004),
 }
-# fatigue is its own shader: dark purple cracks along the sides (assets/limbo/shaders/post/cracks.fsh)
-CRACKS = ("#0b0212", 0.30, 0.95, 1.0, 6.0)  # colour, start, dense, strength at full, scale
+# fatigue is its own shader: a soft black fade along the BOTTOM of the screen (assets/limbo/shaders/post/bottom_dark.fsh)
+BOTTOM = (0.20, 0.78, 0.0)  # height covered, blackness at the very bottom at full strength, flip (set to 1.0 if it shows on top)
 
-def cracks(k):
-    col, start, dense, strength, scale = CRACKS
-    r, g, b = hexrgb(col)
+def cracks(k):  # (name kept) the fatigue overlay
+    height, strength, flip = BOTTOM
     return {
         "targets": {"swap": {}},
         "passes": [
-            {"vertex_shader": "minecraft:core/screenquad", "fragment_shader": "limbo:post/cracks",
+            {"vertex_shader": "minecraft:core/screenquad", "fragment_shader": "limbo:post/bottom_dark",
              "inputs": [{"sampler_name": "In", "target": "minecraft:main"}], "output": "swap",
-             "uniforms": {"CrackConfig": [
-                 {"name": "CrackColor", "type": "vec4", "value": [round(r, 4), round(g, 4), round(b, 4), 1.0]},
-                 {"name": "Params", "type": "vec4", "value": [start, dense, round(strength * k, 4), scale]}]}},
+             "uniforms": {"BottomConfig": [
+                 {"name": "Params", "type": "vec4", "value": [height, round(strength * k, 4), flip, 0.0]}]}},
             {"vertex_shader": "minecraft:core/screenquad", "fragment_shader": "minecraft:post/blit",
              "inputs": [{"sampler_name": "In", "target": "swap"}], "output": "minecraft:main",
              "uniforms": {"BlitConfig": [{"name": "ColorModulate", "type": "vec4", "value": [1.0, 1.0, 1.0, 1.0]}]}},
