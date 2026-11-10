@@ -106,6 +106,6 @@ wind-charge:
 screen-fx:
   mode: shader            # shader | bossbar | both | off   (/limbo fx mode <mode>)
   max-stacked: 2          # at most this many status looks drawn at once
-  fatigue-shader: false   # darkness fatigue's ambient look; every status look always covers it
+  fatigue-shader: true    # darkness fatigue: dark purple cracks along the screen edges; every status look always covers it
   console-sender: true    # run /posteffect as the console (logs each change). false = silent sender, which some servers reject
 
