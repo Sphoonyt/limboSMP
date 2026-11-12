@@ -21,7 +21,7 @@ import java.util.UUID;
  *
  *     [channel 1 icon] ready        [totem]        [channel 2 icon] 42s
  *
- * Each channel shows its own icon (tinted your darkness colour when ready, dim grey while cooling down) and either
+ * Each channel shows its own icon (full colour when ready, greyed while cooling down) and either
  * "ready" or the seconds left. The totem in the middle is the flux indicator: hollow normally, filled in your darkness
  * colour while your flux is active, solid black while you have darkness fatigue.
  * Shown whenever a null totem is anywhere in your inventory (and while holding the cursed item, where only channel 1 is usable).
@@ -42,9 +42,9 @@ public final class CooldownHud {
     private static final char CELL = '\uE130', GAP = '\uE131', BIG_GAP = '\uE132';
     private static final int FIELD_CELLS = 5; // "ready" is 5 cells; numbers are padded to the same width so the bar never shifts
 
-    private static final TextColor DIM = TextColor.color(0x55555A);
-    private static final TextColor HOLLOW = TextColor.color(0xB8B8C0);
-    private static final TextColor BLACK = TextColor.color(0x000000);
+    private static final TextColor DIM = TextColor.color(0x606068);   // icon on cooldown (multiplies the art, so it greys it out)
+    private static final TextColor NO_TINT = TextColor.color(0xFFFFFF);
+        private static final TextColor BLACK = TextColor.color(0x000000);
 
     private final LimboPlugin plugin;
     private BukkitTask task;
@@ -88,7 +88,7 @@ public final class CooldownHud {
         boolean flux = !fatigued && plugin.fluxActive(p, d.id());
         if (fatigued) bar = bar.append(glyphs(String.valueOf(FLUX_FILLED), BLACK));
         else if (flux) bar = bar.append(glyphs(String.valueOf(FLUX_FILLED), mine));
-        else bar = bar.append(glyphs(String.valueOf(FLUX_OUTLINE), HOLLOW));
+        else bar = bar.append(glyphs(String.valueOf(FLUX_OUTLINE), NO_TINT));
 
         bar = bar.append(glyphs(String.valueOf(BIG_GAP), null));
         if (channels.size() > 1) bar = bar.append(channel(d, channels.get(1), id, mine, !cursed));
@@ -109,7 +109,7 @@ public final class CooldownHud {
         boolean ready = left <= 0;
 
         Component out = Component.empty();
-        if (icon != null) out = out.append(glyphs(String.valueOf(icon), usable && ready ? mine : DIM));
+        if (icon != null) out = out.append(glyphs(String.valueOf(icon), usable && ready ? NO_TINT : DIM));
         out = out.append(glyphs(String.valueOf(GAP), null));
         if (!usable) return out.append(glyphs(pad(""), null));
         if (ready) return out.append(glyphs("" + R + E + A + D + Y, TextColor.color(0xFFFFFF)));

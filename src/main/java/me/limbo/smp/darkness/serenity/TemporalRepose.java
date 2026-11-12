@@ -60,6 +60,7 @@ public final class TemporalRepose extends Channel implements Listener {
         final int durationTicks = (int) (pl.getConfig().getDouble("temporal-repose.duration-seconds", 6.0) * 20);
         pl.status().slowTime(t, durationTicks);
         pl.screenFx().show(t, me.limbo.smp.status.ScreenFx.Fx.REPOSE, durationTicks);
+        pl.screenFx().show(t, me.limbo.smp.status.ScreenFx.Fx.REPOSE_BLUR, durationTicks); // motion blur on top
         slows.put(t.getUniqueId(), new Slow(ctx.player().getUniqueId(), System.currentTimeMillis() + durationTicks * 50L));
         Feedback.affected(t, "Temporal Repose", ctx.player());
         UUID id = t.getUniqueId();
