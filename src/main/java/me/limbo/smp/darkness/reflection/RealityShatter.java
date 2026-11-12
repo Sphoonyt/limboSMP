@@ -9,6 +9,7 @@ import me.limbo.smp.util.Feedback;
 import me.limbo.smp.util.Msg;
 import me.limbo.smp.util.ParticleUtil;
 import me.limbo.smp.util.Targeting;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Particle;
@@ -51,7 +52,7 @@ import java.util.concurrent.ThreadLocalRandom;
 public final class RealityShatter extends Channel implements Listener {
     private static final String NAME = "Reality Shatter";
     private static final int DURATION_TICKS = 140;   // 7s
-    private static final double RADIUS = 4.0;
+    private static final double RADIUS = 7.0;      // was 4: three blocks bigger, so 7
     private static final double DAMAGE_FACTOR = 0.8; // 20% reduced
 
     /** True while a shatter hit is being dealt, so listeners (the clone echo) can ignore it. */
@@ -61,29 +62,27 @@ public final class RealityShatter extends Channel implements Listener {
 
     private final Map<UUID, BukkitTask> active = new HashMap<>();
 
-    private static final int SHARDS = 12;
+    private static final int SHARDS = 28;
 
-    /** One energy shard flying around the dome. */
+    /** One small glass shard standing at the base of the dome, drifting slowly around the ring at your feet. */
     private static final class Shard {
         final ItemDisplay display;
-        final double lon0, latAmp, latSpeed, latPhase, lonSpeed, size, spin;
+        final double angle0, speed, size, lean, bobPhase, spin;
 
-        Shard(ItemDisplay display, ThreadLocalRandom r) {
+        Shard(ItemDisplay display, int index, int total, ThreadLocalRandom r) {
             this.display = display;
-            this.lon0 = r.nextDouble(Math.PI * 2);
-            this.latAmp = r.nextDouble(0.35, 1.2);              // how far up and down it swings (radians)
-            this.latSpeed = r.nextDouble(0.02, 0.05) * (r.nextBoolean() ? 1 : -1);
-            this.latPhase = r.nextDouble(Math.PI * 2);
-            this.lonSpeed = r.nextDouble(0.035, 0.08) * (r.nextBoolean() ? 1 : -1);
-            this.size = r.nextDouble(0.55, 1.1);
-            this.spin = r.nextDouble(0.2, 0.5);
+            this.angle0 = Math.PI * 2 * index / total + r.nextDouble(-0.08, 0.08);
+            this.speed = 0.012 * (index % 2 == 0 ? 1 : -1);
+            this.size = r.nextDouble(0.28, 0.5);                  // small
+            this.lean = r.nextDouble(0.1, 0.45);                  // how far it leans outward from upright
+            this.bobPhase = r.nextDouble(Math.PI * 2);
+            this.spin = r.nextDouble(0.04, 0.12);
         }
 
-        /** Point on the dome at tick t (dome centre = origin, unit radius). */
+        /** Unit direction from the centre to this shard at tick t. */
         Vector at(double t) {
-            double lat = latAmp * Math.sin(t * latSpeed + latPhase);
-            double lon = lon0 + t * lonSpeed;
-            return new Vector(Math.cos(lat) * Math.cos(lon), Math.sin(lat), Math.cos(lat) * Math.sin(lon));
+            double a = angle0 + t * speed;
+            return new Vector(Math.cos(a), 0, Math.sin(a));
         }
     }
 
@@ -101,7 +100,7 @@ public final class RealityShatter extends Channel implements Listener {
         List<Shard> mine = new ArrayList<>();
         ThreadLocalRandom rnd0 = ThreadLocalRandom.current();
         for (int i = 0; i < SHARDS; i++) {
-            mine.add(new Shard(FlatFx.spawn(p.getLocation().add(0, 1, 0), FlatFx.SHARD, Display.Billboard.FIXED), rnd0));
+            mine.add(new Shard(FlatFx.spawn(p.getLocation(), FlatFx.SHARD, Display.Billboard.FIXED), i, SHARDS, rnd0));
         }
         shards.put(id, mine);
         BukkitTask t = new BukkitRunnable() {
@@ -125,6 +124,8 @@ public final class RealityShatter extends Channel implements Listener {
     private void end(UUID id) {
         BukkitTask t = active.remove(id);
         if (t != null) t.cancel();
+        Player owner = Bukkit.getPlayer(id);
+        if (owner != null) LimboPlugin.get().vault().closeFor(owner);
         List<Shard> s = shards.remove(id);
         if (s != null) for (Shard sh : s) FlatFx.remove(sh.display);
     }
@@ -137,6 +138,18 @@ public final class RealityShatter extends Channel implements Listener {
     // ------------------------------------------------------------ the swing
 
     /** Swinging at air (no entity, no block) connects with every enemy inside the radius. */
+    /** While Reality Shatter is up: crouch + right click your null totem to open the 9 slot vault. */
+    @EventHandler
+    public void onVault(PlayerInteractEvent e) {
+        if (e.getHand() != org.bukkit.inventory.EquipmentSlot.HAND) return;
+        if (e.getAction() != org.bukkit.event.block.Action.RIGHT_CLICK_AIR && e.getAction() != org.bukkit.event.block.Action.RIGHT_CLICK_BLOCK) return;
+        Player p = e.getPlayer();
+        if (!p.isSneaking() || !active.containsKey(p.getUniqueId())) return;
+        if (!LimboPlugin.get().items().isOrb(p.getInventory().getItemInMainHand())) return;
+        e.setCancelled(true);
+        LimboPlugin.get().vault().open(p);
+    }
+
     @EventHandler
     public void onSwing(PlayerInteractEvent e) {
         if (e.getAction() != Action.LEFT_CLICK_AIR || e.getHand() != EquipmentSlot.HAND) return;
@@ -154,7 +167,8 @@ public final class RealityShatter extends Channel implements Listener {
 
             shatterHit = true;
             try {
-                target.damage(damage, p);
+                final double dmg = damage;
+                me.limbo.smp.item.NullTotemGuard.abilityDamage(() -> target.damage(dmg, p));
             } finally {
                 shatterHit = false;
             }
@@ -188,7 +202,7 @@ public final class RealityShatter extends Channel implements Listener {
         Particle.DustOptions dark = new Particle.DustOptions(ParticleUtil.VOID, 1.0f);
         BlockData glass = Material.GLASS.createBlockData();
 
-        int n = 30;
+        int n = 80;     // more points: the dome is now much bigger
         double golden = Math.PI * (3 - Math.sqrt(5));
         double spin = ticks * 0.03;
         for (int i = 0; i < n; i++) {
@@ -199,7 +213,7 @@ public final class RealityShatter extends Channel implements Listener {
             w.spawnParticle(Particle.DUST_COLOR_TRANSITION, l, 1, 0, 0, 0, 0, shell, true);
         }
         // jagged cracks running across the shell
-        for (int k = 0; k < 4; k++) {
+        for (int k = 0; k < 8; k++) {
             Vector pos = randomUnit(rnd).multiply(RADIUS);
             for (int s = 0; s < 4; s++) {
                 pos.add(new Vector(rnd.nextDouble(-0.5, 0.5), rnd.nextDouble(-0.5, 0.5), rnd.nextDouble(-0.5, 0.5)));
@@ -210,31 +224,31 @@ public final class RealityShatter extends Channel implements Listener {
             }
         }
         // shards falling off it
-        for (int k = 0; k < 2; k++) {
+        for (int k = 0; k < 3; k++) {
             Location l = c.clone().add(randomUnit(rnd).multiply(RADIUS));
             w.spawnParticle(Particle.BLOCK, l, 1, 0.1, 0.1, 0.1, 0, glass, true);
         }
     }
 
     /**
-     * Energy shards (flat models) orbiting the dome: each one swings around the sphere on its own path, pointed along
-     * the way it is travelling and tumbling about that axis.
+     * Small glass shards standing in a ring at the base of the dome, around your feet.
      */
     private void flyShards(Player p, List<Shard> list, int ticks) {
-        Location c = p.getLocation().add(0, 1.0, 0);
-        double radius = RADIUS * 0.96;
+        Location feet = p.getLocation();
+        double ring = RADIUS * 0.97;
         for (Shard s : list) {
-            Vector now = s.at(ticks);
-            Vector next = s.at(ticks + 2);
-            Vector dir = next.clone().subtract(now);
-            Location at = c.clone().add(now.clone().multiply(radius));
+            Vector out = s.at(ticks);
+            double bob = 0.04 * Math.sin(ticks * 0.15 + s.bobPhase);
+            Location at = feet.clone().add(out.clone().multiply(ring)).add(0, s.size * 0.55 + 0.05 + bob, 0);
+            // upright shard leaning away from you, slowly turning on its own axis
+            Vector axis = new Vector(0, 1, 0).add(out.clone().multiply(s.lean)).normalize();
             FlatFx.move(s.display, at, 2);
-            FlatFx.shape(s.display, new Vector3f((float) s.size, (float) (s.size * 1.4), (float) s.size),
-                    FlatFx.yTo(dir), new Quaternionf().rotateY((float) (ticks * s.spin)), 2);
+            FlatFx.shape(s.display, new Vector3f((float) s.size, (float) (s.size * 1.6), (float) s.size),
+                    FlatFx.yTo(axis), new Quaternionf().rotateY((float) (ticks * s.spin)), 2);
         }
-        if (ticks % 8 == 0) { // a glint where they pass
+        if (ticks % 6 == 0) { // a glint on the ring
             Shard s = list.get(ThreadLocalRandom.current().nextInt(list.size()));
-            c.getWorld().spawnParticle(Particle.END_ROD, c.clone().add(s.at(ticks).multiply(radius)), 1, 0.05, 0.05, 0.05, 0.01, null, true);
+            feet.getWorld().spawnParticle(Particle.END_ROD, feet.clone().add(s.at(ticks).multiply(ring)).add(0, 0.3, 0), 1, 0.05, 0.05, 0.05, 0.01, null, true);
         }
     }
 

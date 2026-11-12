@@ -79,7 +79,9 @@ public final class LimboItems {
      * Players without the pack just see a heart of the sea.
      */
     public ItemStack createOrb(Player owner) {
-        return buildTotem(plugin.data().getDarkness(owner));
+        ItemStack it = new ItemStack(Material.HEART_OF_THE_SEA);
+        applyTotem(it, plugin.data().getDarkness(owner), owner);
+        return it;
     }
 
     /** A neutral totem (white tint, no darkness listed). */
@@ -94,7 +96,9 @@ public final class LimboItems {
     }
 
     /** (Re)writes name, description, tint and tags of a totem for the given darkness. */
-    private void applyTotem(ItemStack it, @Nullable Darkness d) {
+    private void applyTotem(ItemStack it, @Nullable Darkness d) { applyTotem(it, d, null); }
+
+    private void applyTotem(ItemStack it, @Nullable Darkness d, @Nullable Player owner) {
         ItemMeta m = it.getItemMeta();
         m.displayName(plain(plugin.getConfig().getString("items.null-totem.name", "<#9b59ff>Null Totem")));
         m.lore(totemLore(d));
@@ -104,7 +108,9 @@ public final class LimboItems {
         m.setCustomModelDataComponent(cmd);
         // each darkness has its own totem texture (minecraft:totems/<id> in the resource pack); a totem with no
         // darkness keeps the neutral tinted model
-        m.setItemModel(d != null ? NamespacedKey.minecraft("totems/" + d.id()) : null);
+        // on the undying cooldown the totem turns grey (totems/<id>_cd in the pack); nothing else marks it
+        boolean cd = owner != null && plugin.totemGuard() != null && plugin.totemGuard().onCooldown(owner);
+        m.setItemModel(d != null ? NamespacedKey.minecraft("totems/" + d.id() + (cd ? "_cd" : "")) : null);
         var pdc = m.getPersistentDataContainer();
         pdc.set(orbKey, PersistentDataType.BYTE, (byte) 1);
         pdc.set(totemKey, PersistentDataType.STRING, d != null ? d.id() : "none");
@@ -156,8 +162,11 @@ public final class LimboItems {
             var pdc = s.getItemMeta().getPersistentDataContainer();
             String cur = pdc.get(totemKey, PersistentDataType.STRING);
             Integer ver = pdc.get(totemVersionKey, PersistentDataType.INTEGER);
-            if (want.equals(cur) && ver != null && ver == TOTEM_VERSION) continue;
-            applyTotem(s, d);
+            boolean cd = plugin.totemGuard().onCooldown(p);
+            String model = s.getItemMeta().hasItemModel() ? s.getItemMeta().getItemModel().getKey() : "";
+            boolean shownGrey = model.endsWith("_cd");
+            if (want.equals(cur) && ver != null && ver == TOTEM_VERSION && shownGrey == cd) continue;
+            applyTotem(s, d, p);
             inv.setItem(i, s);
         }
     }

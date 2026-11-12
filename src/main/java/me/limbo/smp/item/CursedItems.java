@@ -1,7 +1,6 @@
 package me.limbo.smp.item;
 
 import me.limbo.smp.LimboPlugin;
-import me.limbo.smp.darkness.Darkness;
 import me.limbo.smp.util.Msg;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -17,9 +16,7 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.event.player.PlayerDropItemEvent;
-import org.bukkit.event.player.PlayerItemHeldEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
-import org.bukkit.event.player.PlayerSwapHandItemsEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
@@ -239,44 +236,50 @@ public final class CursedItems implements Listener {
 
     // ------------------------------------------------------------ the glint (hotbar + offhand only)
 
-    /** Sets or removes our glint on one stack. @return true if the stack was changed. */
-    private boolean setGlint(ItemStack s, boolean on) {
+    /** "ᴄᴜʀsᴇᴅ <item name>": the item's own name, prefixed, while it is the cursed item. */
+    private static net.kyori.adventure.text.Component cursedName(Material m) {
+        return net.kyori.adventure.text.Component.text(me.limbo.smp.util.SmallCaps.of("cursed") + " ", net.kyori.adventure.text.format.TextColor.color(0x9b59ff))
+                .append(net.kyori.adventure.text.Component.translatable(m.translationKey(), net.kyori.adventure.text.format.NamedTextColor.WHITE))
+                .decoration(net.kyori.adventure.text.format.TextDecoration.ITALIC, false);
+    }
+
+    /**
+     * Sets what we put on this stack: bit 1 = enchant glint, bit 2 = the "cursed" name. Tagged so we only ever
+     * remove our own. @return true if the stack changed.
+     */
+    private boolean mark(ItemStack s, boolean glint, boolean named) {
         if (s == null || s.getType().isAir()) return false;
         ItemMeta m = s.getItemMeta();
         if (m == null) return false;
-        boolean tagged = m.getPersistentDataContainer().has(glintKey, PersistentDataType.BYTE);
-        if (on && !tagged) {
-            m.setEnchantmentGlintOverride(true);
-            m.getPersistentDataContainer().set(glintKey, PersistentDataType.BYTE, (byte) 1);
-            s.setItemMeta(m);
-            return true;
-        }
-        if (!on && tagged) {
-            m.setEnchantmentGlintOverride(null);
-            m.getPersistentDataContainer().remove(glintKey);
-            s.setItemMeta(m);
-            return true;
-        }
-        return false;
+        Byte cur = m.getPersistentDataContainer().get(glintKey, PersistentDataType.BYTE);
+        int have = cur == null ? 0 : cur;
+        int want = (glint ? 1 : 0) | (named ? 2 : 0);
+        if (have == want) return false;
+        m.setEnchantmentGlintOverride(glint ? Boolean.TRUE : null);
+        m.itemName(named ? cursedName(s.getType()) : null);
+        if (want == 0) m.getPersistentDataContainer().remove(glintKey);
+        else m.getPersistentDataContainer().set(glintKey, PersistentDataType.BYTE, (byte) want);
+        s.setItemMeta(m);
+        return true;
     }
 
-    /** Glint on for the cursed item in hotbar slots + offhand, off for it everywhere else. Cheap: type checks only. */
+    /** Cursed item: named everywhere in your inventory, glowing only in the hotbar and offhand. Cheap: type checks only. */
     public void syncGlint(Player p) {
         PlayerInventory inv = p.getInventory();
         boolean on = enabled() && current != null;
+        if (!on) return;
         ItemStack[] storage = inv.getStorageContents();
         for (int i = 0; i < storage.length; i++) {
             ItemStack s = storage[i];
-            if (s == null || s.getType().isAir()) continue;
-            if (on && s.getType() == current) {
-                if (setGlint(s, i < 9)) inv.setItem(i, s);
-            }
+            if (s == null || s.getType() != current) continue;
+            if (mark(s, i < 9, true)) inv.setItem(i, s);
         }
         ItemStack off = inv.getItemInOffHand();
-        if (on && off.getType() == current && setGlint(off, true)) inv.setItemInOffHand(off);
-        for (ItemStack a : inv.getArmorContents()) { // worn (e.g. a head item) is not "in your hotbar"
-            if (on && a != null && a.getType() == current) setGlint(a, false);
-        }
+        if (off.getType() == current && mark(off, true, true)) inv.setItemInOffHand(off);
+        ItemStack[] armor = inv.getArmorContents();
+        boolean changed = false;
+        for (ItemStack a : armor) if (a != null && a.getType() == current) changed |= mark(a, false, true);
+        if (changed) inv.setArmorContents(armor);
     }
 
     /** Removes our glint from EVERYTHING the player carries (item changed, cursed items turned off, quit...). */
@@ -285,7 +288,7 @@ public final class CursedItems implements Listener {
         ItemStack[] all = inv.getContents();
         for (int i = 0; i < all.length; i++) {
             ItemStack s = all[i];
-            if (s != null && !s.getType().isAir() && s.hasItemMeta() && setGlint(s, false)) inv.setItem(i, s);
+            if (s != null && !s.getType().isAir() && s.hasItemMeta() && mark(s, false, false)) inv.setItem(i, s);
         }
     }
 
@@ -298,7 +301,7 @@ public final class CursedItems implements Listener {
         ItemStack[] all = inv.getContents();
         for (int i = 0; i < all.length; i++) {
             ItemStack s = all[i];
-            if (s != null && !s.getType().isAir() && s.hasItemMeta() && setGlint(s, false)) inv.setItem(i, s);
+            if (s != null && !s.getType().isAir() && s.hasItemMeta() && mark(s, false, false)) inv.setItem(i, s);
         }
     }
 
@@ -312,12 +315,12 @@ public final class CursedItems implements Listener {
     public void onDrop(PlayerDropItemEvent e) {
         Item drop = e.getItemDrop();
         ItemStack s = drop.getItemStack();
-        if (s.hasItemMeta() && setGlint(s, false)) drop.setItemStack(s);
+        if (s.hasItemMeta() && mark(s, false, false)) drop.setItemStack(s);
     }
 
     @EventHandler
     public void onDeath(PlayerDeathEvent e) {
-        for (ItemStack s : e.getDrops()) if (s != null && s.hasItemMeta()) setGlint(s, false);
+        for (ItemStack s : e.getDrops()) if (s != null && s.hasItemMeta()) mark(s, false, false);
     }
 
     /** Anything moved into a chest, shulker, hopper-fed block... loses the glint on the next tick. */
@@ -330,24 +333,5 @@ public final class CursedItems implements Listener {
     private void sweepOpenContainer(Inventory top) {
         if (top == null || top.getType() == InventoryType.CRAFTING) return;
         Bukkit.getScheduler().runTask(plugin, () -> stripContainer(top));
-    }
-
-    // ------------------------------------------------------------ holding sound
-
-    private void notifyHeld(Player p) {
-        Darkness d = plugin.data().getDarkness(p);
-        if (d == null) return;
-        p.playSound(p.getLocation(), Sound.BLOCK_SCULK_SENSOR_CLICKING, 0.6f, 0.6f);
-    }
-
-    @EventHandler
-    public void onHeld(PlayerItemHeldEvent e) {
-        ItemStack now = e.getPlayer().getInventory().getItem(e.getNewSlot());
-        if (isActive(now)) notifyHeld(e.getPlayer());
-    }
-
-    @EventHandler
-    public void onSwap(PlayerSwapHandItemsEvent e) {
-        if (isActive(e.getMainHandItem()) || isActive(e.getOffHandItem())) notifyHeld(e.getPlayer());
     }
 }
