@@ -52,6 +52,8 @@ public final class ScreenFx implements Listener {
         KINETIC_STUN("kinetic_stun", "Stunned", BossBar.Color.WHITE, 1, "kinetic", 1, 1, false),
         KINETIC_SLOW("kinetic_slow", "Slowed", BossBar.Color.WHITE, 1, "kinetic", 0, 0, false),
         SPINECUTTER("spinecutter", "Stunned", BossBar.Color.RED, 1, null, 0, 1, false),
+        /** Motion blur that always rides along with REPOSE; a companion layer (2): not counted in max-stacked. */
+        REPOSE_BLUR("repose_blur", "Time slowed", BossBar.Color.PINK, 2, null, 0, 0, false),
         // on yourself
         EVOLUTION("evolution", "Evolved", BossBar.Color.GREEN, 1, null, 0, 0, false),
         BLACK_FLASH("black_flash", "Black Flash", BossBar.Color.RED, 1, null, 0, 0, false),
@@ -62,7 +64,7 @@ public final class ScreenFx implements Listener {
         final String file;
         final String title;
         final BossBar.Color barColor;
-        /** 0 = ambient (hidden by any status), 1 = status. */
+        /** 0 = ambient (hidden by any status), 1 = status, 2 = companion of a status (not counted against the stack limit). */
         final int layer;
         /** Looks in the same group never draw together: only the highest rank does. */
         final String group;
@@ -224,9 +226,11 @@ public final class ScreenFx implements Listener {
         int allowed = maxStacked();
         for (int i = 0; i < candidates.size() && i < allowed; i++) target.put(candidates.get(i), candidates.get(i).cap);
 
+        for (Fx fx : active) if (fx.layer == 2) target.put(fx, fx.cap); // companions ride along with their effect
+
         // 2. the ambient layer only exists while no status is on screen (or still fading out)
         boolean statusVisible = false;
-        for (Map.Entry<Fx, Entry> en : m.entrySet()) if (en.getKey().layer == 1 && en.getValue().level < OFF) statusVisible = true;
+        for (Map.Entry<Fx, Entry> en : m.entrySet()) if (en.getKey().layer >= 1 && en.getValue().level < OFF) statusVisible = true;
         for (Fx fx : active) if (fx.layer == 0 && !statusVisible && target.get(fx) == OFF) target.put(fx, fx.cap);
 
         // 3. step every look one notch toward where it should be
@@ -292,7 +296,7 @@ public final class ScreenFx implements Listener {
     // ------------------------------------------------------------ boss bars (mode bossbar / both)
 
     private void updateBar(Player p, Fx fx, Entry e, long now) {
-        if (!(bars() || fx.bar) || fx.layer == 0) { dropBar(p, e); return; }
+        if (!(bars() || fx.bar) || fx.layer != 1) { dropBar(p, e); return; }
         if (e.until <= now) { dropBar(p, e); return; }
         long total = Math.max(1L, e.until - e.start);
         float progress = Math.max(0f, Math.min(1f, (e.until - now) / (float) total));
