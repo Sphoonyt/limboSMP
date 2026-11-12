@@ -49,7 +49,7 @@ public final class Targeting {
 
     public static boolean damage(Player caster, LivingEntity victim, double amount) {
         if (!canHarm(caster, victim)) return false;
-        victim.damage(amount, caster);
+        me.limbo.smp.item.NullTotemGuard.abilityDamage(() -> victim.damage(amount, caster));
         return true;
     }
 

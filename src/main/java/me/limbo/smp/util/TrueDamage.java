@@ -45,7 +45,9 @@ public final class TrueDamage {
         victim.setNoDamageTicks(noDamageTicks);
         victim.setLastDamage(lastDamage);
         victim.setVelocity(velocity);
-        victim.setHealth(Math.max(0.0, victim.getHealth() - amount));
+        double left = victim.getHealth() - amount;
+        if (left <= 0.0 && victim instanceof Player pv && me.limbo.smp.LimboPlugin.get().totemGuard().tryUndying(pv)) return true;
+        victim.setHealth(Math.max(0.0, left));
         return true;
     }
 }

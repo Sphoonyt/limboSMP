@@ -33,6 +33,7 @@ import me.limbo.smp.soul.SoulListener;
 import me.limbo.smp.soul.SoulMenu;
 import me.limbo.smp.soul.SoulTracker;
 import me.limbo.smp.enchant.AutoEnchants;
+import me.limbo.smp.item.NullTotemGuard;
 import me.limbo.smp.input.CooldownHud;
 import me.limbo.smp.status.FatigueManager;
 import me.limbo.smp.status.ScreenFx;
@@ -64,6 +65,8 @@ public final class LimboPlugin extends JavaPlugin {
     private Unlocks unlocks;
     private CursedItems cursed;
     private ScreenFx screenFx;
+    private NullTotemGuard totemGuard;
+    private me.limbo.smp.item.ShatterVault vault;
     private CooldownHud cooldownHud;
     private AutoEnchants autoEnchants;
     private RewardManager rewards;
@@ -101,6 +104,9 @@ public final class LimboPlugin extends JavaPlugin {
         crafting = new RiftCrafting(this);
         status = new StatusManager(this);
         screenFx = new ScreenFx(this);
+        totemGuard = new NullTotemGuard(this);
+        vault = new me.limbo.smp.item.ShatterVault(this);
+        vault.load();
         cooldownHud = new CooldownHud(this);
         autoEnchants = new AutoEnchants(this);
         menu = new RiftMenu(this);
@@ -141,6 +147,8 @@ public final class LimboPlugin extends JavaPlugin {
         pm.registerEvents(new SiphonListener(this), this);
         pm.registerEvents(status, this);
         pm.registerEvents(screenFx, this);
+        pm.registerEvents(totemGuard, this);
+        pm.registerEvents(vault, this);
         pm.registerEvents(autoEnchants, this);
         for (Darkness d : registry.all()) {
             for (var l : d.listeners()) pm.registerEvents(l, this);
@@ -176,6 +184,7 @@ public final class LimboPlugin extends JavaPlugin {
         if (cursed != null) cursed.shutdown();
         if (ritual != null) ritual.shutdown();
         if (screenFx != null) screenFx.shutdown();
+        if (vault != null) vault.shutdown();
         if (cooldownHud != null) cooldownHud.shutdown();
         if (autoEnchants != null) autoEnchants.shutdown();
         if (riftTeleport != null) riftTeleport.shutdown();
@@ -250,6 +259,8 @@ public final class LimboPlugin extends JavaPlugin {
     public Unlocks unlocks() { return unlocks; }
     public CursedItems cursed() { return cursed; }
     public ScreenFx screenFx() { return screenFx; }
+    public NullTotemGuard totemGuard() { return totemGuard; }
+    public me.limbo.smp.item.ShatterVault vault() { return vault; }
     public AutoEnchants autoEnchants() { return autoEnchants; }
     public RewardManager rewards() { return rewards; }
     public DevotionRitual ritual() { return ritual; }
