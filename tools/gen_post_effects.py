@@ -52,6 +52,22 @@ def cracks(k):  # (name kept) the fatigue overlay
         ],
     }
 
+BLUR = (0.16, 0.18)  # blur length, sharp radius (Temporal Repose motion blur, assets/limbo/shaders/post/radial_blur.fsh)
+
+def blur(k):
+    length, sharp = BLUR
+    return {
+        "targets": {"swap": {}},
+        "passes": [
+            {"vertex_shader": "minecraft:core/screenquad", "fragment_shader": "limbo:post/radial_blur",
+             "inputs": [{"sampler_name": "In", "target": "minecraft:main"}], "output": "swap",
+             "uniforms": {"BlurConfig": [{"name": "Params", "type": "vec4", "value": [round(length * k, 4), sharp, 0.0, 0.0]}]}},
+            {"vertex_shader": "minecraft:core/screenquad", "fragment_shader": "minecraft:post/blit",
+             "inputs": [{"sampler_name": "In", "target": "swap"}], "output": "minecraft:main",
+             "uniforms": {"BlitConfig": [{"name": "ColorModulate", "type": "vec4", "value": [1.0, 1.0, 1.0, 1.0]}]}},
+        ],
+    }
+
 def effect(look, k):
     col, edge, clear, full, desat, dark, tint, fringe = look
     r, g, b = hexrgb(col)
@@ -83,4 +99,8 @@ for lvl, k in enumerate(LEVELS):
     with open(os.path.join(OUT, f"fatigue_{lvl}.json"), "w") as f:
         json.dump(cracks(k), f, indent=2)
         f.write("\n")
-print("wrote", (len(LOOKS) + 1) * len(LEVELS), "post effects to", os.path.normpath(OUT))
+for lvl, k in enumerate(LEVELS):
+    with open(os.path.join(OUT, f"repose_blur_{lvl}.json"), "w") as f:
+        json.dump(blur(k), f, indent=2)
+        f.write("\n")
+print("wrote", (len(LOOKS) + 2) * len(LEVELS), "post effects to", os.path.normpath(OUT))
