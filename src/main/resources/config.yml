@@ -109,3 +109,13 @@ screen-fx:
   fatigue-shader: true    # darkness fatigue: dark purple cracks along the screen edges; every status look always covers it
   console-sender: true    # run /posteffect as the console (logs each change). false = silent sender, which some servers reject
 
+
+# ---- null totem as a totem of undying (only against passive/channel damage) ----
+null-totem-undying:
+  enabled: true
+  cooldown-minutes: 30
+  require-held: false     # false = anywhere in your inventory counts; true = main hand / offhand only
+
+# ---- ability feedback ----
+feedback:
+  mode: top               # top = text at the top of the screen for 3s (needs the pack for a clean look) | chat | off
