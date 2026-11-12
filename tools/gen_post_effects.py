@@ -20,19 +20,19 @@ def hexrgb(h):
 # name: (colour, edge strength, clear radius, full radius, desaturate, rim darkening, whole-screen tint, fringing)
 # (stronger than the first pass: the rim now starts closer to the centre and is more opaque)
 LOOKS = {
-    # victims
-    "enchain":       ("#961428", 0.62, 0.40, 0.95, 0.25, 0.18, 0.05, 0.000),
-    "silence":       ("#46be5a", 0.55, 0.38, 0.92, 0.45, 0.14, 0.08, 0.000),
-    "repose":        ("#ffafcd", 0.52, 0.38, 0.92, 0.35, 0.00, 0.10, 0.005),
-    "axiom":         ("#9646e6", 0.58, 0.40, 0.92, 0.22, 0.20, 0.04, 0.000),
-    "black_hole":    ("#05000c", 0.80, 0.25, 0.85, 0.45, 0.35, 0.00, 0.000),
-    "kinetic_stun":  ("#40e0d0", 0.60, 0.32, 0.90, 0.22, 0.10, 0.04, 0.004),
-    "kinetic_slow":  ("#40e0d0", 0.48, 0.55, 1.05, 0.05, 0.00, 0.00, 0.000),   # same look, covers far less
-    "spinecutter":   ("#961428", 0.58, 0.38, 0.92, 0.20, 0.16, 0.03, 0.000),
-    # buffs on yourself
-    "evolution":     ("#46be5a", 0.42, 0.52, 1.05, 0.00, 0.00, 0.05, 0.000),
-    "black_flash":   ("#c81020", 0.50, 0.50, 1.05, 0.00, 0.20, 0.00, 0.000),
-    "construct":     ("#a5cdff", 0.40, 0.52, 1.05, 0.00, 0.00, 0.07, 0.004),
+    # victims: a bold coloured frame that closes in from every edge, plus a wash over the whole screen
+    "enchain":       ("#b01830", 0.90, 0.42, 0.95, 0.40, 0.30, 0.12, 0.000),
+    "silence":       ("#46be5a", 0.85, 0.40, 0.95, 0.55, 0.25, 0.14, 0.000),
+    "repose":        ("#ffafcd", 0.82, 0.40, 0.95, 0.45, 0.10, 0.18, 0.006),
+    "axiom":         ("#9646e6", 0.88, 0.42, 0.95, 0.35, 0.30, 0.12, 0.000),
+    "black_hole":    ("#05000c", 0.97, 0.30, 0.85, 0.55, 0.50, 0.00, 0.000),
+    "kinetic_stun":  ("#40e0d0", 0.88, 0.38, 0.92, 0.35, 0.22, 0.10, 0.006),
+    "kinetic_slow":  ("#40e0d0", 0.70, 0.62, 1.05, 0.10, 0.00, 0.00, 0.000),   # same look, covers far less
+    "spinecutter":   ("#b01830", 0.88, 0.40, 0.95, 0.30, 0.28, 0.08, 0.000),
+    # buffs on yourself: lighter, but clearly there
+    "evolution":     ("#46be5a", 0.65, 0.55, 1.00, 0.00, 0.00, 0.10, 0.000),
+    "black_flash":   ("#c81020", 0.72, 0.52, 1.00, 0.00, 0.35, 0.00, 0.000),
+    "construct":     ("#a5cdff", 0.62, 0.55, 1.00, 0.00, 0.00, 0.14, 0.005),
 }
 # fatigue is its own shader: a soft black fade along the BOTTOM of the screen (assets/limbo/shaders/post/bottom_dark.fsh)
 BOTTOM = (0.20, 0.78, 0.0)  # height covered, blackness at the very bottom at full strength, flip (set to 1.0 if it shows on top)
