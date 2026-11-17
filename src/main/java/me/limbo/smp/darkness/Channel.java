@@ -42,6 +42,9 @@ public abstract class Channel {
     /** Optional extra text for the cooldown display, e.g. "1/2" charges. Null for none. */
     public String hudCharges(java.util.UUID id) { return null; }
 
+    /** Charge channels: milliseconds until each charge is back (0 = ready), shown separately on the action bar. Null = single cooldown. */
+    public long[] hudSlots(java.util.UUID id) { return null; }
+
     /** Called by /limbo cooldown reset (for channels with custom cooldowns). */
     public void onCooldownReset(java.util.UUID id) {}
 

@@ -39,7 +39,8 @@ public final class CooldownHud {
             Map.entry("evolution", '\uE10C'), Map.entry("silencing_maw", '\uE10D'));
     private static final char FLUX_OUTLINE = '\uE110', FLUX_FILLED = '\uE111';
     private static final char DIGIT0 = '\uE120', S = '\uE12A', R = '\uE12B', E = '\uE12C', A = '\uE12D', D = '\uE12E', Y = '\uE12F';
-    private static final char CELL = '\uE130', GAP = '\uE131', BIG_GAP = '\uE132';
+    private static final char CELL = '\uE130', GAP = '\uE131', BIG_GAP = '\uE132', CHECK = '\uE133';
+    private static final int DUAL_CELLS = 9;
     private static final int FIELD_CELLS = 5; // "ready" is 5 cells; numbers are padded to the same width so the bar never shifts
 
     private static final TextColor DIM = TextColor.color(0x606068);   // icon on cooldown (multiplies the art, so it greys it out)
@@ -80,29 +81,41 @@ public final class CooldownHud {
         Color c = d.color();
         TextColor mine = TextColor.color(c.getRed(), c.getGreen(), c.getBlue());
 
+        // both sides are padded to the same width so the totem stays dead centre whatever the cooldowns say
+        Channel c1 = channels.get(0), c2 = channels.size() > 1 ? channels.get(1) : null;
+        int width = Math.max(cells(c1), c2 == null ? 0 : cells(c2));
+
         Component bar = Component.empty();
-        bar = bar.append(channel(d, channels.get(0), id, mine, true));
+        bar = bar.append(channel(d, c1, id, true, width));
         bar = bar.append(glyphs(String.valueOf(BIG_GAP), null));
 
         boolean fatigued = plugin.fatigue().isFatigued(id);
         boolean flux = !fatigued && plugin.fluxActive(p, d.id());
+        // the totem is always drawn in your darkness colour (its border is a dark shade of it, like the icons):
+        // hollow normally, filled while your flux is active, solid black with fatigue
         if (fatigued) bar = bar.append(glyphs(String.valueOf(FLUX_FILLED), BLACK));
         else if (flux) bar = bar.append(glyphs(String.valueOf(FLUX_FILLED), mine));
-        else bar = bar.append(glyphs(String.valueOf(FLUX_OUTLINE), NO_TINT));
+        else bar = bar.append(glyphs(String.valueOf(FLUX_OUTLINE), mine));
 
         bar = bar.append(glyphs(String.valueOf(BIG_GAP), null));
-        if (channels.size() > 1) bar = bar.append(channel(d, channels.get(1), id, mine, !cursed));
+        if (c2 != null) bar = bar.append(channel(d, c2, id, !cursed, width));
         p.sendActionBar(bar);
     }
 
-    /** icon, a gap, then "ready" or the seconds, padded to a fixed width. `usable` = false dims it (cursed item: channel 2). */
-    private Component channel(Darkness d, Channel ch, UUID id, TextColor mine, boolean usable) {
+    /** Width of a channel's cooldown field in cells: 5 for "ready" / a number, 9 for two charges side by side. */
+    private static int cells(Channel ch) { return ch.hudSlots(new UUID(0, 0)) != null ? DUAL_CELLS : FIELD_CELLS; }
+
+    /** icon, then "ready" / the seconds left, or for two-charge channels one small field per charge. */
+    private Component channel(Darkness d, Channel ch, UUID id, boolean usable, int width) {
         Character icon = ICONS.get(ch.id());
+        long[] slots = ch.hudSlots(id);
         long left;
-        if (ch.usesCustomCooldown()) {
-            String charges = ch.hudCharges(id); // "1/2": usable while at least one charge is back
-            boolean anyReady = charges != null && !charges.startsWith("0");
-            left = anyReady ? 0 : ch.hudRemaining(id);
+        if (slots != null) {
+            long best = Long.MAX_VALUE;
+            for (long s : slots) best = Math.min(best, s);
+            left = best; // the icon is lit while at least one charge is ready
+        } else if (ch.usesCustomCooldown()) {
+            left = ch.hudRemaining(id);
         } else {
             left = plugin.dispatcher().cooldowns().remaining(id, d.id() + ":" + ch.id());
         }
@@ -111,18 +124,44 @@ public final class CooldownHud {
         Component out = Component.empty();
         if (icon != null) out = out.append(glyphs(String.valueOf(icon), usable && ready ? NO_TINT : DIM));
         out = out.append(glyphs(String.valueOf(GAP), null));
-        if (!usable) return out.append(glyphs(pad(""), null));
-        if (ready) return out.append(glyphs("" + R + E + A + D + Y, TextColor.color(0xFFFFFF)));
-        long secs = (left + 999) / 1000;
-        StringBuilder num = new StringBuilder();
-        for (char ch2 : String.valueOf(secs).toCharArray()) num.append((char) (DIGIT0 + (ch2 - '0')));
-        num.append(S);
-        return out.append(glyphs(pad(num.toString()), TextColor.color(0xE0E0E6)));
+        int used;
+        if (!usable) {
+            used = 0;
+        } else if (slots != null) {
+            for (int i = 0; i < slots.length; i++) {
+                if (i > 0) out = out.append(glyphs(String.valueOf(CELL), null));
+                out = out.append(slot(slots[i]));
+            }
+            used = slots.length * 4 + (slots.length - 1);
+        } else if (ready) {
+            out = out.append(glyphs("" + R + E + A + D + Y, TextColor.color(0xFFFFFF)));
+            used = 5;
+        } else {
+            out = out.append(glyphs(pad(secondsText(left), 5), TextColor.color(0xE0E0E6)));
+            used = 5;
+        }
+        // pad out to the shared width
+        StringBuilder filler = new StringBuilder();
+        for (int i = used; i < width; i++) filler.append(CELL);
+        return filler.length() == 0 ? out : out.append(glyphs(filler.toString(), null));
     }
 
-    private static String pad(String cells) {
+    /** One charge: a check mark when it is ready, otherwise its seconds. Always 4 cells wide. */
+    private static Component slot(long ms) {
+        if (ms <= 0) return glyphs(pad(String.valueOf(CHECK), 4), TextColor.color(0xFFFFFF));
+        return glyphs(pad(secondsText(ms), 4), TextColor.color(0xE0E0E6));
+    }
+
+    private static String secondsText(long ms) {
+        long secs = (ms + 999) / 1000;
+        StringBuilder num = new StringBuilder();
+        for (char ch : String.valueOf(secs).toCharArray()) num.append((char) (DIGIT0 + (ch - '0')));
+        return num.append(S).toString();
+    }
+
+    private static String pad(String cells, int to) {
         StringBuilder sb = new StringBuilder(cells);
-        while (sb.length() < FIELD_CELLS) sb.append(CELL);
+        while (sb.length() < to) sb.append(CELL);
         return sb.toString();
     }
 

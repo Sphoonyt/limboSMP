@@ -80,7 +80,6 @@ public final class InputDispatcher {
             if (c.execute(ctx)) {
                 if (!c.usesCustomCooldown()) cooldowns.set(id, key, cursed ? c.cooldownMillis() * 2 : c.cooldownMillis());
                 Feedback.activated(p, c.name());
-                me.limbo.smp.util.CastFx.sigil(p, d.color());
                 plugin.fatigue().record(p, d, c);
             }
         } catch (Throwable t) {

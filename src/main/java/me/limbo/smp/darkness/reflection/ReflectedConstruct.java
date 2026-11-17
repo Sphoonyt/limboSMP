@@ -65,17 +65,17 @@ import java.util.UUID;
  * included, straight ahead if you stand still) without passing through blocks, except cobwebs, and turn truly
  * invisible for 5 seconds. An identical clone is left where you stood and copies your movements from there.
  * It lasts 5 seconds or until something hits it: it then explodes, blinding the attacker for 6 seconds and dealing
- * 1.5 hearts of true damage. 2 charges, each recharges after 45 seconds.
+ * 1.5 hearts of true damage. 2 charges, each recharges after 65 seconds.
  *
  * Nothing announces it to other players: no sound, no particles. The only tells are the clone and you vanishing.
- * Invisibility is the potion, re-applied every 2 ticks for the whole duration (so being hit or milk can't end it),
- * plus the player is hidden from every other player's client, so there is no nametag and no gear to leak, and
- * nothing can leave you looking naked when it ends.
+ * Invisibility is the potion, re-applied every 2 ticks (so milk can't end it), every other client is sent empty
+ * equipment for you, and your nametag is hidden. You are NOT hidden from other clients' hit detection, so you can be hit
+ * like anyone else. It ends early if your clone is destroyed (popped, killed, or gone) and no other clone of yours is left.
  */
 public final class ReflectedConstruct extends Channel implements Listener {
     private static final String NAME = "Reflected Construct";
     private static final int CHARGES = 2;
-    private static final long RECHARGE_MS = 45_000L;
+    private static final long RECHARGE_MS = 65_000L; // per charge
     private static final double DISTANCE = 6.0;
     private static final int DURATION_TICKS = 100;       // 5s: invisibility and clone
     private static final int BLIND_TICKS = 120;          // 6s
@@ -111,6 +111,15 @@ public final class ReflectedConstruct extends Channel implements Listener {
         long now = System.currentTimeMillis(), soonest = Long.MAX_VALUE;
         for (long s : slots) if (s > now) soonest = Math.min(soonest, s - now);
         return soonest == Long.MAX_VALUE ? 0L : soonest;
+    }
+
+    @Override
+    public long[] hudSlots(UUID id) {
+        long[] slots = charges.get(id);
+        long now = System.currentTimeMillis();
+        long[] out = new long[CHARGES];
+        if (slots != null) for (int i = 0; i < CHARGES; i++) out[i] = Math.max(0L, slots[i] - now);
+        return out;
     }
 
     @Override
@@ -222,8 +231,10 @@ public final class ReflectedConstruct extends Channel implements Listener {
     private static final class Invis {
         long until;
         BukkitTask task;
-        final Set<UUID> hiddenFrom = new HashSet<>();
+        org.bukkit.scoreboard.Team previousTeam;
     }
+
+    private static final String TEAM = "limbo_invis";
 
     private void beginInvisibility(Player p) {
         UUID id = p.getUniqueId();
@@ -235,6 +246,7 @@ public final class ReflectedConstruct extends Channel implements Listener {
         INVIS.put(id, fresh);
         LimboPlugin.get().screenFx().show(p, me.limbo.smp.status.ScreenFx.Fx.CONSTRUCT, DURATION_TICKS);
         LimboPlugin pl = LimboPlugin.get();
+        hideNametag(p, fresh);
         fresh.task = new BukkitRunnable() {
             int t = 0;
 
@@ -242,15 +254,30 @@ public final class ReflectedConstruct extends Channel implements Listener {
                 if (!p.isOnline() || p.isDead() || System.currentTimeMillis() >= fresh.until) { endInvisibility(p); return; }
                 // re-applied constantly: hits, milk, totems... can't drop it
                 p.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, 12, 0, false, false, false));
-                if (t % 5 == 0) { // also hidden from every other client: no nametag, no gear
-                    for (Player v : Bukkit.getOnlinePlayers()) {
-                        if (v.equals(p) || v.getWorld() != p.getWorld()) continue;
-                        if (fresh.hiddenFrom.add(v.getUniqueId())) v.hideEntity(pl, p);
-                    }
-                }
+                // nobody sees gear: every client that can see you is told you wear and hold nothing
+                for (Player v : p.getTrackedBy()) for (EquipmentSlot s : SLOTS) v.sendEquipmentChange(p, s, new ItemStack(Material.AIR));
                 t++;
             }
         }.runTaskTimer(pl, 0L, 2L);
+    }
+
+    /** Nametag off for everyone via a team (your own team, if any, is put back afterwards). */
+    private void hideNametag(Player p, Invis inv) {
+        org.bukkit.scoreboard.Scoreboard sb = Bukkit.getScoreboardManager().getMainScoreboard();
+        org.bukkit.scoreboard.Team t = sb.getTeam(TEAM);
+        if (t == null) {
+            t = sb.registerNewTeam(TEAM);
+            t.setOption(org.bukkit.scoreboard.Team.Option.NAME_TAG_VISIBILITY, org.bukkit.scoreboard.Team.OptionStatus.NEVER);
+        }
+        inv.previousTeam = sb.getEntryTeam(p.getName());
+        t.addEntry(p.getName());
+    }
+
+    private void showNametag(Player p, Invis inv) {
+        org.bukkit.scoreboard.Scoreboard sb = Bukkit.getScoreboardManager().getMainScoreboard();
+        org.bukkit.scoreboard.Team t = sb.getTeam(TEAM);
+        if (t != null) t.removeEntry(p.getName());
+        if (inv.previousTeam != null) inv.previousTeam.addEntry(p.getName());
     }
 
     private void endInvisibility(Player p) {
@@ -259,10 +286,7 @@ public final class ReflectedConstruct extends Channel implements Listener {
         if (inv.task != null) inv.task.cancel();
         LimboPlugin pl = LimboPlugin.get();
         pl.screenFx().clear(p, me.limbo.smp.status.ScreenFx.Fx.CONSTRUCT);
-        for (UUID u : inv.hiddenFrom) {
-            Player v = Bukkit.getPlayer(u);
-            if (v != null) v.showEntity(pl, p);
-        }
+        showNametag(p, inv);
         if (!pl.fluxActive(p, ReflectionDarkness.ID)) p.removePotionEffect(PotionEffectType.INVISIBILITY);
         // belt and braces: make sure nobody is left looking at an empty-handed, armourless player
         Bukkit.getScheduler().runTaskLater(pl, () -> {
@@ -346,6 +370,9 @@ public final class ReflectedConstruct extends Channel implements Listener {
                 }
                 if (clone.isValid()) clone.remove();
             }
+            boolean another = false;
+            for (Cast c : byClone.values()) if (c != this && c.p.getUniqueId().equals(p.getUniqueId())) another = true;
+            if (!another) endInvisibility(p); // the clone is gone: so is your invisibility
         }
 
         private void copyGear(Mannequin m) {

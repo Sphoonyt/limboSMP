@@ -133,7 +133,8 @@ public final class OpenFurnace extends Channel implements Listener {
 
         // the bolt itself is a model (resource pack: limbo:effects/furnace_bolt); the flame particles trail it
         org.bukkit.entity.ItemDisplay bolt = me.limbo.smp.util.FlatFx.spawn(pos, me.limbo.smp.util.FlatFx.FURNACE_BOLT, org.bukkit.entity.Display.Billboard.FIXED);
-        me.limbo.smp.util.FlatFx.shape(bolt, new org.joml.Vector3f(0.9f, 1.8f, 0.9f), me.limbo.smp.util.FlatFx.yTo(dir), new org.joml.Quaternionf(), 0);
+        me.limbo.smp.util.FlatFx.shape(bolt, new org.joml.Vector3f(1.5f, 3.0f, 1.5f), me.limbo.smp.util.FlatFx.yTo(dir), new org.joml.Quaternionf(), 0);
+        final boolean[] hitPlayer = {false};
         new BukkitRunnable() {
             double travelled = 0;
             @Override public void run() {
@@ -146,6 +147,7 @@ public final class OpenFurnace extends Channel implements Listener {
                     Vector hp = r.getHitPosition();
                     if (r.getHitEntity() instanceof LivingEntity target) {
                         hit.add(target.getUniqueId());
+                        if (target instanceof Player) hitPlayer[0] = true;
                         strike(p, target);
                         double used = hp.distance(from.toVector()) + 0.01;
                         from.add(dir.clone().multiply(used)); // keep going: the arrow pierces
@@ -154,8 +156,11 @@ public final class OpenFurnace extends Channel implements Listener {
                     }
                     // hit a block: the arrow is spent
                     Location at = hp.toLocation(w);
-                    w.spawnParticle(Particle.FLAME, at, 12, 0.2, 0.2, 0.2, 0.05, null, true);
-                    w.playSound(at, Sound.BLOCK_FIRE_EXTINGUISH, 0.6f, 1.2f);
+                    if (!hitPlayer[0]) explode(p, at, hit); // never touched a player: it bursts on the surface
+                    else {
+                        w.spawnParticle(Particle.FLAME, at, 12, 0.2, 0.2, 0.2, 0.05, null, true);
+                        w.playSound(at, Sound.BLOCK_FIRE_EXTINGUISH, 0.6f, 1.2f);
+                    }
                     me.limbo.smp.util.FlatFx.remove(bolt);
                     cancel();
                     return;
@@ -177,6 +182,25 @@ public final class OpenFurnace extends Channel implements Listener {
             Location l = pos.clone().add(dir.clone().multiply(t));
             w.spawnParticle(Particle.FLAME, l, 1, 0.05, 0.05, 0.05, 0.01, null, true);
             w.spawnParticle(Particle.DUST_COLOR_TRANSITION, l, 1, 0, 0, 0, 0, fire, true);
+        }
+    }
+
+    /** Impact on a surface without having hit a player: full damage to enemies caught in it, but no scorch mark. */
+    private void explode(Player p, Location at, Set<UUID> alreadyHit) {
+        World w = at.getWorld();
+        double r = 3.0;
+        w.spawnParticle(Particle.EXPLOSION, at, 1, 0, 0, 0, 0, null, true);
+        w.spawnParticle(Particle.FLAME, at, 40, 0.6, 0.5, 0.6, 0.12, null, true);
+        w.spawnParticle(Particle.LAVA, at, 10, 0.5, 0.3, 0.5, 0, null, true);
+        w.spawnParticle(Particle.DUST_COLOR_TRANSITION, at, 30, 0.8, 0.6, 0.8, 0, new Particle.DustTransition(IgnitionDarkness.COLOR, ParticleUtil.VOID, 1.6f), true);
+        me.limbo.smp.util.Sfx.play(at, Sound.ENTITY_GENERIC_EXPLODE, 0.9f, 1.3f, me.limbo.smp.util.Sfx.Theme.IGNITION);
+        for (LivingEntity le : w.getNearbyLivingEntities(at, r)) {
+            if (le.equals(p) || alreadyHit.contains(le.getUniqueId())) continue;
+            if (!Targeting.canHarm(p, le) || !Targeting.isEnemy(le)) continue;
+            if (TrueDamage.apply(p, le, ARROW_DAMAGE)) { // full damage, no scorch mark, no burning
+                Feedback.affected(le, NAME, p);
+                ParticleUtil.burst(le.getLocation().add(0, 1, 0), IgnitionDarkness.COLOR, 12);
+            }
         }
     }
 

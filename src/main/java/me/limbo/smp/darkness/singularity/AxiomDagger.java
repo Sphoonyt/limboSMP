@@ -78,6 +78,15 @@ public final class AxiomDagger extends Channel {
     }
 
     @Override
+    public long[] hudSlots(UUID id) {
+        long[] slots = charges.get(id);
+        long now = System.currentTimeMillis();
+        long[] out = new long[CHARGES];
+        if (slots != null) for (int i = 0; i < CHARGES; i++) out[i] = Math.max(0L, slots[i] - now);
+        return out;
+    }
+
+    @Override
     public String hudCharges(UUID id) {
         long[] slots = charges.get(id);
         long now = System.currentTimeMillis();

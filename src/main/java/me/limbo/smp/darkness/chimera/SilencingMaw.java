@@ -28,15 +28,18 @@ import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * L - pick a point under your crosshair (up to 30 blocks). A 4 block radius circle marks the ground and after
- * 1 second spikes burst out of it. Enemies caught are thrown upwards, take 2 hearts of true damage and have their
- * darkness (passives, flux and channels) disabled for 8 seconds. 45s cooldown.
+ * 1 second spikes burst out of it. Enemies caught are thrown upwards, take 1.5 hearts of true damage and have their
+ * darkness (passives, flux and channels) disabled for 8 seconds. 2 charges, each recharges 50s after use. A second
+ * one can't be placed where it would overlap the first.
  */
 public final class SilencingMaw extends Channel {
     private static final String NAME = "Silencing Maw";
     private static final double RANGE = 30.0;
     private static final double RADIUS = 4.0;
     private static final int DELAY_TICKS = 20;
-    private static final double DAMAGE = 4.0;        // 2 hearts
+    private static final double DAMAGE = 3.0;        // 1.5 hearts
+    private static final int CHARGES = 2;
+    private static final long RECHARGE_MS = 50_000L;  // per charge
     private static final int SILENCE_TICKS = 160;    // 8s
 
     private static final Color BRIGHT = Color.fromRGB(150, 255, 160);
@@ -44,16 +47,67 @@ public final class SilencingMaw extends Channel {
 
     public SilencingMaw() {
         super("silencing_maw", NAME, "Spikes erupt at your crosshair, launching enemies, hurting them and silencing their darkness for 8s.",
-                ChannelInput.L, 45_000L);
+                ChannelInput.L, RECHARGE_MS);
+    }
+
+    // ------------------------------------------------------------ charges (own tracking, like Axiom Dagger)
+
+    private final java.util.Map<java.util.UUID, long[]> charges = new java.util.HashMap<>();
+    /** Circles that are still marked or erupting, per caster: {x, z, expiry}. A new one may not overlap these. */
+    private final java.util.Map<java.util.UUID, List<double[]>> zones = new java.util.HashMap<>();
+
+    @Override public boolean usesCustomCooldown() { return true; }
+
+    @Override public void onCooldownReset(java.util.UUID id) { charges.remove(id); zones.remove(id); }
+
+    @Override
+    public long hudRemaining(java.util.UUID id) {
+        long[] slots = charges.get(id);
+        if (slots == null) return 0L;
+        long now = System.currentTimeMillis(), soonest = Long.MAX_VALUE;
+        for (long x : slots) if (x > now) soonest = Math.min(soonest, x - now);
+        return soonest == Long.MAX_VALUE ? 0L : soonest;
+    }
+
+    @Override
+    public long[] hudSlots(java.util.UUID id) {
+        long[] slots = charges.get(id);
+        long now = System.currentTimeMillis();
+        long[] out = new long[CHARGES];
+        if (slots != null) for (int i = 0; i < CHARGES; i++) out[i] = Math.max(0L, slots[i] - now);
+        return out;
+    }
+
+    @Override
+    public String hudCharges(java.util.UUID id) {
+        long[] s = hudSlots(id);
+        int ready = 0;
+        for (long x : s) if (x <= 0) ready++;
+        return ready + "/" + CHARGES;
     }
 
     @Override
     public boolean execute(ChannelContext ctx) {
         Player p = ctx.player();
+        long now = System.currentTimeMillis();
+        long[] slots = charges.computeIfAbsent(p.getUniqueId(), k -> new long[CHARGES]);
+        int use = -1;
+        for (int i = 0; i < CHARGES; i++) if (slots[i] <= now) { use = i; break; }
+        if (use < 0) return false;
+
         Location target = findTarget(p);
         if (target == null) {
             return false;
         }
+        // the second circle can't overlap the first one
+        List<double[]> mine = zones.computeIfAbsent(p.getUniqueId(), k -> new ArrayList<>());
+        mine.removeIf(z -> z[2] <= now);
+        for (double[] z : mine) {
+            double dx = z[0] - target.getX(), dz = z[1] - target.getZ();
+            if (dx * dx + dz * dz < (RADIUS * 2) * (RADIUS * 2)) return false; // charge not spent
+        }
+        mine.add(new double[]{target.getX(), target.getZ(), now + DELAY_TICKS * 50L + 2500L});
+        slots[use] = now + (ctx.cursed() ? RECHARGE_MS * 2 : RECHARGE_MS);
         World w = target.getWorld();
         Sfx.play(target, Sound.ENTITY_EVOKER_PREPARE_ATTACK, 1f, 0.7f, Sfx.Theme.CHIMERA);
 

@@ -1,7 +1,6 @@
 package me.limbo.smp.item;
 
 import me.limbo.smp.LimboPlugin;
-import org.bukkit.EntityEffect;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
@@ -71,9 +70,19 @@ public final class NullTotemGuard implements Listener {
         p.addPotionEffect(new PotionEffect(PotionEffectType.ABSORPTION, 100, 1));
         p.addPotionEffect(new PotionEffect(PotionEffectType.FIRE_RESISTANCE, 800, 0));
         p.setFireTicks(0);
-        p.playEffect(EntityEffect.PROTECTED_FROM_DEATH);
-        p.getWorld().spawnParticle(Particle.TOTEM_OF_UNDYING, p.getLocation().add(0, 1, 0), 40, 0.4, 0.6, 0.4, 0.4);
-        p.getWorld().playSound(p.getLocation(), Sound.ITEM_TOTEM_USE, 1f, 1f);
+        // the pop: in your darkness colour, and no totem animation on your own screen
+        org.bukkit.Color col = org.bukkit.Color.WHITE;
+        var dk = plugin.data().getDarkness(p);
+        if (dk != null) col = dk.color();
+        org.bukkit.Location at = p.getLocation().add(0, 1, 0);
+        var w = p.getWorld();
+        w.spawnParticle(Particle.DUST, at, 70, 0.5, 0.8, 0.5, 0.0, new Particle.DustOptions(col, 1.6f), true);
+        w.spawnParticle(Particle.DUST_COLOR_TRANSITION, at, 40, 0.4, 0.7, 0.4, 0.0, new Particle.DustTransition(col, org.bukkit.Color.WHITE, 1.3f), true);
+        for (int k = 0; k < 24; k++) {
+            double a = Math.PI * 2 * k / 24;
+            w.spawnParticle(Particle.DUST, at.clone().add(Math.cos(a) * 1.1, -0.5, Math.sin(a) * 1.1), 1, 0, 0, 0, 0, new Particle.DustOptions(col, 1.4f), true);
+        }
+        w.playSound(p.getLocation(), Sound.ITEM_TOTEM_USE, 0.8f, 1.25f);
         org.bukkit.Bukkit.getScheduler().runTask(plugin, () -> plugin.items().syncTotems(p)); // grey it out right away
         return true;
     }

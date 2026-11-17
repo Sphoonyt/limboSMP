@@ -44,8 +44,8 @@ import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * R - for 7 seconds your darkness shatters the glass of space in a 4 block radius that moves with you.
- * Swinging at AIR connects with every enemy inside the radius for 20% less damage than a normal hit
+ * R - for 7 seconds your darkness shatters the glass of space in a 7 block radius that moves with you.
+ * Swinging at AIR connects with every enemy inside the radius for a full hit (armor ignored, Resistance still counts)
  * (normal hits are unaffected). These hits can never trigger Reflected Constructs' clone echo.
  * 90s cooldown.
  */
@@ -53,7 +53,7 @@ public final class RealityShatter extends Channel implements Listener {
     private static final String NAME = "Reality Shatter";
     private static final int DURATION_TICKS = 140;   // 7s
     private static final double RADIUS = 7.0;      // was 4: three blocks bigger, so 7
-    private static final double DAMAGE_FACTOR = 0.8; // 20% reduced
+    private static final double DAMAGE_FACTOR = 1.0; // full damage (it used to be 20% reduced)
 
     /** True while a shatter hit is being dealt, so listeners (the clone echo) can ignore it. */
     private static boolean shatterHit = false;
@@ -167,8 +167,8 @@ public final class RealityShatter extends Channel implements Listener {
 
             shatterHit = true;
             try {
-                final double dmg = damage;
-                me.limbo.smp.item.NullTotemGuard.abilityDamage(() -> target.damage(dmg, p));
+                // full damage that ignores armor, but the Resistance effect still reduces it
+                me.limbo.smp.util.TrueDamage.apply(p, target, damage, true);
             } finally {
                 shatterHit = false;
             }

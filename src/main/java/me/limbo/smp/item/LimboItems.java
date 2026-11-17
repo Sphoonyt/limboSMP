@@ -110,6 +110,7 @@ public final class LimboItems {
         // darkness keeps the neutral tinted model
         // on the undying cooldown the totem turns grey (totems/<id>_cd in the pack); nothing else marks it
         boolean cd = owner != null && plugin.totemGuard() != null && plugin.totemGuard().onCooldown(owner);
+        m.setEnchantmentGlintOverride(true); // null totems glint
         m.setItemModel(d != null ? NamespacedKey.minecraft("totems/" + d.id() + (cd ? "_cd" : "")) : null);
         var pdc = m.getPersistentDataContainer();
         pdc.set(orbKey, PersistentDataType.BYTE, (byte) 1);

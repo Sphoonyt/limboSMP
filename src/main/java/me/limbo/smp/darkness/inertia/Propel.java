@@ -36,7 +36,7 @@ public final class Propel extends Channel {
     private static final int MAX_TICKS = 8;
     private static final int IMMUNITY_TICKS = 100; // 5s
     private static final double THROUGH_DAMAGE = 4.0; // 2 hearts
-    private static final double HIT_RADIUS = 1.5;
+    private static final double HIT_RADIUS = 2.4; // generous on purpose: at ~76 blocks/s a tight hitbox misses people you clearly passed
 
     public Propel() {
         super("propel", NAME, "Fast dash where you look. Hurts what you pass through.", ChannelInput.R, 35_000L);
@@ -67,13 +67,12 @@ public final class Propel extends Channel {
                 if (now.getWorld() != start.getWorld()) { finish(p, direction); cancel(); return; }
 
                 double travelled = now.distance(start);
-                if (ticks > 0) {
-                    stalled = (now.distance(last) < SPEED * 0.15) ? stalled + 1 : 0; // hit a wall
-                    damageAlong(p, last, now, hit);
-                }
+                if (ticks > 0) stalled = (now.distance(last) < SPEED * 0.15) ? stalled + 1 : 0; // hit a wall
+                damageAlong(p, ticks == 0 ? start : last, now, hit); // every tick, including the first
                 trail(now);
 
                 if (travelled >= DISTANCE - 0.3 || stalled >= 2 || ticks >= MAX_TICKS) {
+                    damageAlong(p, now, now.clone().add(direction.clone().multiply(1.5)), hit); // the last stretch of the glide
                     finish(p, direction);
                     cancel();
                     return;
@@ -90,13 +89,23 @@ public final class Propel extends Channel {
     /** Everything within 1.5 blocks of the path travelled this tick takes 2 hearts of true damage (once per dash). */
     private void damageAlong(Player p, Location from, Location to, Set<UUID> hit) {
         World w = from.getWorld();
-        Vector a = from.clone().add(0, 1, 0).toVector();
-        Vector b = to.clone().add(0, 1, 0).toVector();
-        BoundingBox box = BoundingBox.of(a, b).expand(HIT_RADIUS + 1.0);
-        for (Entity en : w.getNearbyEntities(box)) {
+        Vector a = from.clone().toVector();
+        Vector b = to.clone().toVector();
+        Vector ab = b.clone().subtract(a);
+        double len = ab.length();
+        BoundingBox area = BoundingBox.of(a.clone().add(new Vector(0, 1, 0)), b.clone().add(new Vector(0, 1, 0))).expand(HIT_RADIUS + 2.0);
+        for (Entity en : w.getNearbyEntities(area)) {
             if (!(en instanceof LivingEntity le) || le.equals(p) || hit.contains(le.getUniqueId())) continue;
             if (!Targeting.canHarm(p, le) || !Targeting.isEnemy(le)) continue;
-            if (distanceToSegment(a, b, le.getBoundingBox().getCenter()) > HIT_RADIUS) continue;
+            // sweep a body-sized probe along the path and test it against the target's hitbox grown by HIT_RADIUS
+            BoundingBox target = le.getBoundingBox().expand(HIT_RADIUS * 0.7);
+            boolean touched = false;
+            int steps = Math.max(1, (int) Math.ceil(len / 0.5));
+            for (int i = 0; i <= steps && !touched; i++) {
+                Vector at = a.clone().add(ab.clone().multiply(i / (double) steps));
+                for (double h : new double[]{0.4, 1.0, 1.6}) if (target.contains(at.getX(), at.getY() + h, at.getZ())) { touched = true; break; }
+            }
+            if (!touched) continue;
             hit.add(le.getUniqueId());
             if (TrueDamage.apply(p, le, THROUGH_DAMAGE)) {
                 Feedback.affected(le, NAME, p);
