@@ -79,8 +79,6 @@ Each look has 3 strengths (`name_0/1/2`) that are stepped through to fade in/out
 `/limbo fx mode shader|bossbar|both|off`, `/limbo fx test <effect> [player]`, `/limbo fx clear [player]`.
 Regenerate looks: `python3 tools/gen_post_effects.py`. Stuns (Kinetic Thief, Spinecutter) are repeated-teleport stuns (`StatusManager#holdInPlace`).
 
-## Auto enchants
-Holding your null totem enchants the gear you carry (armor, hotbar, offhand) for your darkness; removed when you stop holding it and before items leave you. See `enchant/AutoEnchants`.
 
 ## Resource pack
 The status shaders need the pack on the client. Set `resource-pack.url`/`sha1` and `resource-pack.required: true` in config.yml to force it (players who decline are kicked by the client). `/limbo reroll [player|all]` rerolls with the slot machine.
