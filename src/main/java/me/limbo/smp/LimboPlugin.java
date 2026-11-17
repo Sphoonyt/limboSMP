@@ -148,6 +148,7 @@ public final class LimboPlugin extends JavaPlugin {
         pm.registerEvents(status, this);
         pm.registerEvents(screenFx, this);
         pm.registerEvents(totemGuard, this);
+        pm.registerEvents(new me.limbo.smp.item.StewListener(this), this);
         pm.registerEvents(vault, this);
         pm.registerEvents(autoEnchants, this);
         for (Darkness d : registry.all()) {

@@ -55,6 +55,16 @@ public final class Sfx {
         }
     }
 
+    /** A sound whose pitch glides from `from` to `to` over `ticks` ticks (charge-ups, rising tension). */
+    public static void sweep(Location at, Sound sound, float volume, float from, float to, int ticks) {
+        World w = at.getWorld();
+        if (w == null) return;
+        for (int i = 0; i <= ticks; i += 2) {
+            final float pitch = clamp(from + (to - from) * (i / (float) Math.max(1, ticks)));
+            Bukkit.getScheduler().runTaskLater(LimboPlugin.get(), () -> w.playSound(at, sound, volume, pitch), i);
+        }
+    }
+
     /** Plays `base` with the theme's body, sub, air and tail layers. */
     public static void play(Location at, Sound base, float volume, float pitch, Theme theme) {
         World w = at.getWorld();
